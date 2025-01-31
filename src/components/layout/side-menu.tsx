@@ -78,7 +78,21 @@ const menuItems = [
   {
     title: '설정',
     href: '/settings',
-    icon: Settings
+    icon: Settings,
+    subItems: [
+      {
+        title: '카테고리 관리',
+        href: '/settings/categories',
+      },
+      {
+        title: '지역 관리',
+        href: '/settings/regions',
+      },
+      {
+        title: 'API 관리',
+        href: '/settings/apis',
+      }
+    ]
   },
 ]
 
