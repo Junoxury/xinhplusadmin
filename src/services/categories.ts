@@ -21,19 +21,36 @@ export const CategoryService = {
     return data
   },
 
-  // depth2 카테고리 목록 조회
-  async getDepth2Categories(depth1Id?: number) {
-    const query = supabase
+  // depth2 카테고리 목록 조회 (부위와 시술 순서로 정렬)
+  async getDepth2Categories() {
+    const { data, error } = await supabase
       .from('categories')
       .select('*')
       .eq('depth', 2)
-      .order('sort_order')
-    
-    if (depth1Id) {
-      query.eq('parent_id', depth1Id)
-    }
+      .order('sort_order', { ascending: true })
 
-    const { data, error } = await query
+    if (error) throw error
+
+    // 부위 카테고리가 먼저 오도록 정렬
+    return data.sort((a, b) => {
+      const isBodyA = a.parent_id === 1  // 부위 카테고리의 parent_id가 1이라고 가정
+      const isBodyB = b.parent_id === 1
+      
+      if (isBodyA && !isBodyB) return -1
+      if (!isBodyA && isBodyB) return 1
+      return a.sort_order - b.sort_order
+    })
+  },
+
+  // depth3 카테고리 목록 조회 (수정)
+  async getDepth3Categories(depth2Id: number) {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('depth', 3)
+      .eq('parent_id', depth2Id)  // parent_id로 필터링
+      .order('sort_order')
+
     if (error) throw error
     return data
   },

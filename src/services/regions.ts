@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { Tables } from '@/types/supabase'
+import type { Tables } from '@/types/database.types'
 
 export type City = Tables['cities']
 
@@ -33,5 +33,15 @@ export const RegionService = {
       .eq('id', id)
 
     if (error) throw error
+  },
+
+  async getCities() {
+    const { data, error } = await supabase
+      .from('cities')
+      .select('*')
+      .order('name_ko')
+
+    if (error) throw error
+    return data
   }
 } 
