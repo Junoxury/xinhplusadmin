@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { Input } from '@/components/ui/input'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -19,105 +18,192 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Card } from '@/components/ui/card'
+import { CategoryService, type Category } from '@/services/categories'
+import { Pencil, Trash2 } from 'lucide-react'
 
 export function CategoryList() {
-  const [pageSize, setPageSize] = useState('10')
+  const [categories, setCategories] = useState<Category[]>([])
+  const [depth1Categories, setDepth1Categories] = useState<Category[]>([])
+  const [depth2Categories, setDepth2Categories] = useState<Category[]>([])
+  const [selectedDepth1, setSelectedDepth1] = useState<number>()
+  const [selectedDepth2, setSelectedDepth2] = useState<number>()
+
+  useEffect(() => {
+    loadDepth1Categories()
+  }, [])
+
+  useEffect(() => {
+    if (selectedDepth1) {
+      loadDepth2Categories(selectedDepth1)
+    } else {
+      setDepth2Categories([])
+      setSelectedDepth2(undefined)
+    }
+  }, [selectedDepth1])
+
+  useEffect(() => {
+    loadCategories()
+  }, [selectedDepth1, selectedDepth2])
+
+  const loadDepth1Categories = async () => {
+    try {
+      const data = await CategoryService.getDepth1Categories()
+      setDepth1Categories(data)
+    } catch (error) {
+      console.error('Failed to load depth1 categories:', error)
+    }
+  }
+
+  const loadDepth2Categories = async (depth1Id: number) => {
+    try {
+      const data = await CategoryService.getDepth2Categories(depth1Id)
+      setDepth2Categories(data)
+    } catch (error) {
+      console.error('Failed to load depth2 categories:', error)
+    }
+  }
+
+  const loadCategories = async () => {
+    try {
+      const data = await CategoryService.getAll({
+        depth1Id: selectedDepth1,
+        depth2Id: selectedDepth2
+      })
+      setCategories(data)
+    } catch (error) {
+      console.error('Failed to load categories:', error)
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    if (confirm('정말 삭제하시겠습니까?')) {
+      try {
+        await CategoryService.delete(id)
+        await loadCategories()
+      } catch (error) {
+        console.error('Failed to delete category:', error)
+      }
+    }
+  }
+
+  const getDepthName = (category: Category, targetDepth: number) => {
+    // 현재 카테고리가 찾는 depth인 경우
+    if (category.depth === targetDepth) return category.name
+    
+    // 현재 카테고리의 depth가 찾는 depth보다 큰 경우 (상위 카테고리를 찾아야 함)
+    if (category.depth > targetDepth) {
+      let currentCategory = category
+      let parentCategory
+
+      // 원하는 depth를 찾을 때까지 상위로 올라감
+      while (currentCategory.depth > targetDepth) {
+        parentCategory = categories.find(c => c.id === currentCategory.parent_id)
+        if (!parentCategory) return '-'
+        currentCategory = parentCategory
+      }
+
+      return currentCategory.name
+    }
+
+    return '-'
+  }
+
+  const handleDepth1Change = (value: string) => {
+    setSelectedDepth1(value === "0" ? undefined : Number(value))
+  }
+
+  const handleDepth2Change = (value: string) => {
+    setSelectedDepth2(value === "0" ? undefined : Number(value))
+  }
 
   return (
     <div className="space-y-4">
-      {/* 필터 섹션 */}
       <Card className="p-4">
         <div className="flex gap-4">
-          <Input placeholder="카테고리명 검색" className="w-1/3" />
-          <Select className="w-1/3">
-            <SelectTrigger>
-              <SelectValue placeholder="상위 카테고리" />
+          <Select
+            value={selectedDepth1?.toString() || "0"}
+            onValueChange={handleDepth1Change}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Depth1 선택" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="face">안면</SelectItem>
-              <SelectItem value="body">체형</SelectItem>
-              <SelectItem value="skin">피부</SelectItem>
-              <SelectItem value="dental">치과</SelectItem>
+              <SelectItem value="0">전체</SelectItem>
+              {depth1Categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id.toString()}>
+                  {cat.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select className="w-1/3">
-            <SelectTrigger>
-              <SelectValue placeholder="상태" />
+
+          <Select
+            value={selectedDepth2?.toString() || "0"}
+            onValueChange={handleDepth2Change}
+            disabled={!selectedDepth1}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Depth2 선택" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="active">활성</SelectItem>
-              <SelectItem value="inactive">비활성</SelectItem>
+              <SelectItem value="0">전체</SelectItem>
+              {depth2Categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id.toString()}>
+                  {cat.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
       </Card>
 
-      {/* 테이블 헤더와 정렬 옵션 */}
-      <div className="flex justify-between items-center mb-2">
-        <div className="text-sm text-muted-foreground">
-          총 <span className="font-medium text-primary">{10}</span>개의 카테고리
-        </div>
-        <Select defaultValue="order">
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="정렬 기준" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="order">노출 순서</SelectItem>
-            <SelectItem value="name">이름순</SelectItem>
-            <SelectItem value="count">시술수</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* 테이블 */}
       <Card>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>번호</TableHead>
-              <TableHead>카테고리명</TableHead>
-              <TableHead>상위카테고리</TableHead>
-              <TableHead>깊이</TableHead>
-              <TableHead>시술수</TableHead>
+              <TableHead>Depth1</TableHead>
+              <TableHead>Depth2</TableHead>
+              <TableHead>Depth3</TableHead>
+              <TableHead>아이콘</TableHead>
               <TableHead>순서</TableHead>
               <TableHead>상태</TableHead>
-              <TableHead>등록일</TableHead>
-              <TableHead>관리</TableHead>
+              <TableHead className="text-right">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* 샘플 데이터는 나중에 추가하겠습니다 */}
+            {categories.map((category, index) => (
+              <TableRow key={category.id}>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>{getDepthName(category, 1)}</TableCell>
+                <TableCell>{getDepthName(category, 2)}</TableCell>
+                <TableCell>{getDepthName(category, 3)}</TableCell>
+                <TableCell>
+                  {category.icon_path || '-'}
+                </TableCell>
+                <TableCell>{category.sort_order}</TableCell>
+                <TableCell>{category.is_active ? '활성' : '비활성'}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="icon">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleDelete(category.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </Card>
 
-      {/* 페이지네이션과 등록 버튼 */}
-      <div className="flex items-center justify-between">
-        <Select value={pageSize} onValueChange={setPageSize}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="페이지당 항목 수" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="10">10개씩 보기</SelectItem>
-            <SelectItem value="20">20개씩 보기</SelectItem>
-            <SelectItem value="50">50개씩 보기</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="flex-1 flex justify-center">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">처음</Button>
-            <Button variant="outline" size="sm">이전</Button>
-            <Button variant="outline" size="sm">1</Button>
-            <Button variant="outline" size="sm">2</Button>
-            <Button variant="outline" size="sm">3</Button>
-            <Button variant="outline" size="sm">4</Button>
-            <Button variant="outline" size="sm">5</Button>
-            <Button variant="outline" size="sm">다음</Button>
-            <Button variant="outline" size="sm">마지막</Button>
-          </div>
-        </div>
-
+      <div className="flex justify-end">
         <Button 
           size="lg"
           className="bg-primary hover:bg-primary/90"

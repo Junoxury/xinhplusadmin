@@ -18,6 +18,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 const menuItems = [
   {
@@ -100,6 +105,88 @@ export function SideMenu() {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
+  const renderMenuItem = (menu: typeof menuItems[0]) => {
+    // 하위 메뉴가 있는 경우
+    if (menu.subItems && isCollapsed) {
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <div
+              className={cn(
+                "flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                pathname.startsWith(menu.href) ? "bg-accent" : "transparent",
+              )}
+            >
+              <menu.icon className="h-4 w-4" />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent side="right" className="p-0 w-40">
+            <div className="space-y-1 p-1">
+              {menu.subItems.map((subItem) => (
+                <Link
+                  key={subItem.href}
+                  href={subItem.href}
+                  className={cn(
+                    "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                    pathname === subItem.href ? "bg-accent" : "transparent"
+                  )}
+                >
+                  {subItem.title}
+                </Link>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      )
+    }
+
+    // 하위 메뉴가 있는 경우 (펼쳐진 상태)
+    if (menu.subItems && !isCollapsed) {
+      return (
+        <>
+          <div
+            className={cn(
+              "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+              pathname.startsWith(menu.href) ? "bg-accent" : "transparent"
+            )}
+          >
+            <menu.icon className="h-4 w-4 mr-2" />
+            {menu.title}
+          </div>
+          <div className="ml-6 mt-1 space-y-1">
+            {menu.subItems.map((subItem) => (
+              <Link
+                key={subItem.href}
+                href={subItem.href}
+                className={cn(
+                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                  pathname === subItem.href ? "bg-accent" : "transparent"
+                )}
+              >
+                {subItem.title}
+              </Link>
+            ))}
+          </div>
+        </>
+      )
+    }
+
+    // 일반 메뉴인 경우
+    return (
+      <Link
+        href={menu.href}
+        className={cn(
+          "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+          pathname === menu.href ? "bg-accent" : "transparent",
+          isCollapsed && "justify-center"
+        )}
+      >
+        <menu.icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
+        {!isCollapsed && menu.title}
+      </Link>
+    )
+  }
+
   return (
     <div className={cn(
       "relative border-r bg-card",
@@ -108,42 +195,21 @@ export function SideMenu() {
     )}>
       <div className="flex flex-col py-4 h-full">
         <div className="px-3 py-2">
-          <h2 className={cn(
-            "mb-2 px-4 text-lg font-semibold transition-all duration-300",
-            isCollapsed && "opacity-0"
+          <div className={cn(
+            "mb-6 px-4 flex items-center",
+            isCollapsed && "justify-center"
           )}>
-            메뉴
-          </h2>
+            <span className={cn(
+              "text-2xl font-bold text-primary transition-all duration-300",
+              isCollapsed && "text-lg"
+            )}>
+              Xinh+
+            </span>
+          </div>
           <div className="space-y-1">
             {menuItems.map((menu) => (
               <div key={menu.href}>
-                <Link
-                  href={menu.href}
-                  className={cn(
-                    "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                    pathname === menu.href ? "bg-accent" : "transparent",
-                    isCollapsed && "justify-center"
-                  )}
-                >
-                  <menu.icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-                  {!isCollapsed && menu.title}
-                </Link>
-                {menu.subItems && !isCollapsed && (
-                  <div className="ml-6 mt-1 space-y-1">
-                    {menu.subItems.map((subItem) => (
-                      <Link
-                        key={subItem.href}
-                        href={subItem.href}
-                        className={cn(
-                          "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                          pathname === subItem.href ? "bg-accent" : "transparent"
-                        )}
-                      >
-                        {subItem.title}
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                {renderMenuItem(menu)}
               </div>
             ))}
           </div>
