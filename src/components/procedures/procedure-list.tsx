@@ -39,8 +39,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { getTreatments, type Treatment } from '@/services/treatments'
+import { useRouter } from 'next/navigation'
 
 export function ProcedureList() {
+  const router = useRouter()
+
   // 가격 범위 최대값 설정 (99,999,999 VND)
   const MAX_PRICE = 99999999;
 
@@ -379,7 +382,11 @@ export function ProcedureList() {
               </TableRow>
             ) : (
               treatmentData?.data.map((treatment, index) => (
-                <TableRow key={treatment.id}>
+                <TableRow 
+                  key={treatment.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => router.push(`/procedures/detail?id=${treatment.id}`)}
+                >
                   <TableCell>
                     {(currentPage - 1) * Number(pageSize) + index + 1}
                   </TableCell>

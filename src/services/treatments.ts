@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { TreatmentDetail } from '@/types/treatment'
 
 export interface Treatment {
   id: number
@@ -101,4 +102,16 @@ export async function getTreatments(params: TreatmentListParams): Promise<Treatm
   console.log('[getTreatments] Final result:', result);
 
   return result;
+}
+
+export async function getTreatmentDetail(id: number): Promise<TreatmentDetail> {
+  const { data, error } = await supabase
+    .rpc('get_treatment_detail', {
+      p_treatment_id: id
+    })
+
+  if (error) throw error
+  if (!data || data.length === 0) throw new Error('Treatment not found')
+  
+  return data[0]
 } 
