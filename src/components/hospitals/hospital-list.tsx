@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
@@ -37,7 +37,10 @@ export function HospitalList() {
   const [params, setParams] = useState<GetHospitalsParams>({
     page: 1,
     pageSize: 10,
-    sortBy: 'latest'
+    sortBy: 'latest',
+    is_advertised: undefined,
+    is_recommended: undefined,
+    is_member: undefined
   })
   const [totalCount, setTotalCount] = useState(0)
   const [pageSize, setPageSize] = useState('10')
@@ -45,19 +48,28 @@ export function HospitalList() {
   const [selectedDepth3Id, setSelectedDepth3Id] = useState<string>("0")
   const [isOpen, setIsOpen] = useState(false)
   const [filters, setFilters] = useState({
-    isAd: false,
-    isRecommended: false,
-    isMember: false,
-    hasGoogleMap: false,
+    status: undefined as undefined | 'ad' | 'recommended' | 'member' | 'google'
   })
   const [cities, setCities] = useState<City[]>([])
   const [depth2Categories, setDepth2Categories] = useState<Category[]>([])
   const [depth3Categories, setDepth3Categories] = useState<Category[]>([])
 
-  useEffect(() => {
-    console.log('params changed:', params)
-    loadHospitals()
+  const loadHospitals = useCallback(async () => {
+    try {
+      console.log('calling RPC with params:', params)
+      const data = await HospitalService.getHospitals(params)
+      console.log(`RPC result: ${data.length} hospitals found, total: ${data[0]?.total_count || 0}`)
+      
+      setHospitals(data)
+      setTotalCount(data[0]?.total_count || 0)
+    } catch (error) {
+      console.error('Failed to load hospitals:', error)
+    }
   }, [params])
+
+  useEffect(() => {
+    loadHospitals()
+  }, [loadHospitals])
 
   useEffect(() => {
     loadCities()
@@ -88,18 +100,15 @@ export function HospitalList() {
     }))
   }, [selectedDepth2Id, selectedDepth3Id])
 
-  const loadHospitals = async () => {
-    try {
-      console.log('calling RPC with params:', params)
-      const data = await HospitalService.getHospitals(params)
-      console.log(`RPC result: ${data.length} hospitals found, total: ${data[0]?.total_count || 0}`)
-      
-      setHospitals(data)
-      setTotalCount(data[0]?.total_count || 0)
-    } catch (error) {
-      console.error('Failed to load hospitals:', error)
-    }
-  }
+  useEffect(() => {
+    setParams(prev => ({
+      ...prev,
+      is_advertised: filters.status === 'ad' ? true : undefined,
+      is_recommended: filters.status === 'recommended' ? true : undefined,
+      is_member: filters.status === 'member' ? true : undefined,
+      page: 1
+    }))
+  }, [filters.status])
 
   const loadCities = async () => {
     try {
@@ -149,15 +158,34 @@ export function HospitalList() {
       <Card className="p-4">
         <div className="space-y-4">
           <div className="flex gap-4">
-            <Input placeholder="병원명 검색" className="w-1/3" />
-            <div className="flex gap-2 w-2/3">
+            <Input placeholder="병원명 검색" className="w-1/4" />
+            <div className="flex gap-2 w-3/4">
               <Select 
-                className="w-1/3"
+                value={filters.status}
+                onValueChange={(value: typeof filters.status) => 
+                  setFilters(prev => ({ ...prev, status: value }))
+                }
+                className="w-[140px]"
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="상태" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={undefined}>전체</SelectItem>
+                  <SelectItem value="ad">광고</SelectItem>
+                  <SelectItem value="recommended">추천</SelectItem>
+                  <SelectItem value="member">멤버</SelectItem>
+                  <SelectItem value="google">구글</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select 
+                className="w-[140px]"
                 value={params.cityId?.toString() || "0"}
                 onValueChange={handleCityChange}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="지역 선택" />
+                  <SelectValue placeholder="지역" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="0">전체</SelectItem>
@@ -168,8 +196,9 @@ export function HospitalList() {
                   ))}
                 </SelectContent>
               </Select>
+
               <Select 
-                className="w-1/3"
+                className="w-[140px]"
                 value={selectedDepth2Id}
                 onValueChange={(value) => {
                   setSelectedDepth2Id(value)
@@ -177,7 +206,7 @@ export function HospitalList() {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="시술 방법(대분류)" />
+                  <SelectValue placeholder="시술 대분류" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="0">전체</SelectItem>
@@ -188,14 +217,15 @@ export function HospitalList() {
                   ))}
                 </SelectContent>
               </Select>
+
               <Select 
-                className="w-1/3"
+                className="w-[140px]"
                 value={selectedDepth3Id}
                 onValueChange={setSelectedDepth3Id}
                 disabled={!selectedDepth2Id || selectedDepth2Id === "0"}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="시술 방법(소분류)" />
+                  <SelectValue placeholder="시술 소분류" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="0">전체</SelectItem>
@@ -206,99 +236,6 @@ export function HospitalList() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center">
-              <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-                <CollapsibleTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="px-8 h-6 bg-card hover:bg-card/80 border border-border"
-                  >
-                    <ChevronDownIcon
-                      className={`h-4 w-4 transition-transform duration-200 ${
-                        isOpen ? "transform rotate-180" : ""
-                      }`}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="w-full">
-                  <div className="pt-4 mt-4 border-t border-border">
-                    <div className="flex items-center gap-4">
-                      <Input placeholder="이메일 검색" className="w-1/6" />
-                      <Input placeholder="전화번호 검색" className="w-1/6" />
-                      <div className="flex items-center gap-8 ml-4">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="isAd" 
-                            checked={filters.isAd}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({...prev, isAd: checked as boolean}))
-                            }
-                          />
-                          <label
-                            htmlFor="isAd"
-                            className="text-sm font-medium leading-none"
-                          >
-                            광고
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="isRecommended"
-                            checked={filters.isRecommended}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({...prev, isRecommended: checked as boolean}))
-                            }
-                          />
-                          <label
-                            htmlFor="isRecommended"
-                            className="text-sm font-medium leading-none"
-                          >
-                            추천
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="isMember"
-                            checked={filters.isMember}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({...prev, isMember: checked as boolean}))
-                            }
-                          />
-                          <label
-                            htmlFor="isMember"
-                            className="text-sm font-medium leading-none"
-                          >
-                            멤버
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="hasGoogleMap"
-                            checked={filters.hasGoogleMap}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({...prev, hasGoogleMap: checked as boolean}))
-                            }
-                          />
-                          <label
-                            htmlFor="hasGoogleMap"
-                            className="text-sm font-medium leading-none"
-                          >
-                            구글
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
             </div>
           </div>
         </div>

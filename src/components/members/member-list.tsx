@@ -113,7 +113,7 @@ export function MemberList() {
         <div className="space-y-4">
           <div className="flex gap-4">
             <Input 
-              placeholder="이메일, 닉네임 검색" 
+              placeholder="이메일, 닉네임, 전화번호 검색" 
               className="w-1/3"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -169,79 +169,6 @@ export function MemberList() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center">
-              <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-                <CollapsibleTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="px-8 h-6 bg-card hover:bg-card/80 border border-border"
-                  >
-                    <ChevronDownIcon
-                      className={`h-4 w-4 transition-transform duration-200 ${
-                        isOpen ? "transform rotate-180" : ""
-                      }`}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="w-full">
-                  <div className="pt-4 mt-4 border-t border-border">
-                    <div className="flex items-center gap-4">
-                      <Input placeholder="전화번호 검색" className="w-1/6" />
-                      <Select className="w-1/6">
-                        <SelectTrigger>
-                          <SelectValue placeholder="관심카테고리" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">전체</SelectItem>
-                          <SelectItem value="plastic">성형외과</SelectItem>
-                          <SelectItem value="dermatology">피부과</SelectItem>
-                          <SelectItem value="dental">치과</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="flex items-center gap-8 ml-4">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="hasReviews"
-                            checked={filters.hasReviews}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({...prev, hasReviews: checked as boolean}))
-                            }
-                          />
-                          <label
-                            htmlFor="hasReviews"
-                            className="text-sm font-medium leading-none"
-                          >
-                            리뷰
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="isActive"
-                            checked={filters.isActive}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({...prev, isActive: checked as boolean}))
-                            }
-                          />
-                          <label
-                            htmlFor="isActive"
-                            className="text-sm font-medium leading-none"
-                          >
-                            활성
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
             </div>
           </div>
         </div>

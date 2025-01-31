@@ -38,7 +38,8 @@ BEGIN
       CASE 
         WHEN search_text IS NOT NULL THEN 
           au.email ILIKE '%' || search_text || '%' OR 
-          (au.raw_user_meta_data->'profile'->>'nickname')::VARCHAR ILIKE '%' || search_text || '%'
+          (au.raw_user_meta_data->'profile'->>'nickname')::VARCHAR ILIKE '%' || search_text || '%' OR
+          (au.raw_user_meta_data->'profile'->>'phone')::VARCHAR ILIKE '%' || search_text || '%'
         ELSE true
       END
       AND

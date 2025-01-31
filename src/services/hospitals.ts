@@ -4,18 +4,16 @@ import type { Tables } from '@/types/database.types'
 export type Hospital = Tables['hospitals']
 
 export interface GetHospitalsParams {
+  page: number
+  pageSize: number
+  sortBy: 'latest' | 'views' | 'rating' | 'likes'
   cityId?: number
-  depth2BodyCategoryId?: number
   depth2TreatmentCategoryId?: number
-  depth3BodyCategoryId?: number
   depth3TreatmentCategoryId?: number
-  isAdvertised?: boolean
-  isRecommended?: boolean
-  isMember?: boolean
+  is_advertised?: boolean
+  is_recommended?: boolean
+  is_member?: boolean
   hasDiscount?: boolean
-  page?: number
-  pageSize?: number
-  sortBy?: 'latest' | 'views' | 'rating' | 'likes'
 }
 
 export const HospitalService = {
@@ -74,13 +72,11 @@ export const HospitalService = {
 
   async getHospitals({
     cityId,
-    depth2BodyCategoryId,
     depth2TreatmentCategoryId,
-    depth3BodyCategoryId,
     depth3TreatmentCategoryId,
-    isAdvertised,
-    isRecommended,
-    isMember,
+    is_advertised,
+    is_recommended,
+    is_member,
     hasDiscount,
     page = 1,
     pageSize = 10,
@@ -89,13 +85,11 @@ export const HospitalService = {
     const { data, error } = await supabase
       .rpc('get_hospitals_list', {
         p_city_id: cityId,
-        p_depth2_body_category_id: depth2BodyCategoryId,
         p_depth2_treatment_category_id: depth2TreatmentCategoryId,
-        p_depth3_body_category_id: depth3BodyCategoryId,
         p_depth3_treatment_category_id: depth3TreatmentCategoryId,
-        p_is_advertised: isAdvertised,
-        p_is_recommended: isRecommended,
-        p_is_member: isMember,
+        p_is_advertised: is_advertised,
+        p_is_recommended: is_recommended,
+        p_is_member: is_member,
         p_has_discount: hasDiscount,
         p_page: page,
         p_page_size: pageSize,
