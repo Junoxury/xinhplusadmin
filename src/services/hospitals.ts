@@ -98,5 +98,14 @@ export const HospitalService = {
 
     if (error) throw error
     return data as Hospital[]
+  },
+
+  // 병원 상세 정보 조회
+  async getHospitalDetail(id: number) {
+    const { data, error } = await supabase
+      .rpc('get_hospital_detail', { p_hospital_id: id })
+    
+    if (error) throw error
+    return data[0]
   }
 } 

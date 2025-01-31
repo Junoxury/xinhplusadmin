@@ -31,6 +31,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { RegionService, type City } from '@/services/regions'
 import Image from 'next/image'
 import { CategoryService, type Category } from '@/services/categories'
+import { useRouter } from "next/navigation"
 
 export function HospitalList() {
   const [hospitals, setHospitals] = useState<Hospital[]>([])
@@ -53,6 +54,7 @@ export function HospitalList() {
   const [cities, setCities] = useState<City[]>([])
   const [depth2Categories, setDepth2Categories] = useState<Category[]>([])
   const [depth3Categories, setDepth3Categories] = useState<Category[]>([])
+  const router = useRouter()
 
   const loadHospitals = useCallback(async () => {
     try {
@@ -281,7 +283,11 @@ export function HospitalList() {
           <TableBody>
             {hospitals.length > 0 ? (
               hospitals.map((hospital, index) => (
-                <TableRow key={hospital.id}>
+                <TableRow 
+                  key={hospital.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => router.push(`/hospitals/detail?id=${hospital.id}`)}
+                >
                   <TableCell>{(params.page - 1) * params.pageSize + index + 1}</TableCell>
                   <TableCell>
                     {hospital.thumbnail_url ? (
