@@ -1,6 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getMembersList, type Member } from '@/services/members'
+import { getRegions } from '@/services/regions'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
@@ -26,16 +29,82 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from '@/components/ui/badge'
+import { MoreHorizontal, Mail, Phone } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 
 export function MemberList() {
   const [pageSize, setPageSize] = useState('10')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [searchText, setSearchText] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [filters, setFilters] = useState({
-    isVerified: false,
-    isPremium: false,
+    gender: 'all',
+    provider: 'all',
+    city: null as number | null,
+    category: null as number | null,
     hasReviews: false,
     isActive: false,
   })
+
+  // 회원 목록 조회
+  const { data: memberData, isLoading, error } = useQuery({
+    queryKey: ['members', currentPage, pageSize, searchText, filters],
+    queryFn: async () => {
+      console.log('Fetching members with params:', {
+        search_text: searchText || undefined,
+        gender_filter: filters.gender || undefined,
+        provider_filter: filters.provider || undefined,
+        city_filter: filters.city || undefined,
+        category_filter: filters.category || undefined,
+        page_number: currentPage,
+        items_per_page: Number(pageSize)
+      });
+
+      const result = await getMembersList({
+        search_text: searchText || undefined,
+        gender_filter: filters.gender || undefined,
+        provider_filter: filters.provider || undefined,
+        city_filter: filters.city || undefined,
+        category_filter: filters.category || undefined,
+        page_number: currentPage,
+        items_per_page: Number(pageSize)
+      });
+
+      console.log('API Response:', result);
+      return result;
+    }
+  })
+
+  // 지역 목록 조회
+  const { data: regions } = useQuery({
+    queryKey: ['regions'],
+    queryFn: async () => {
+      const result = await getRegions();
+      console.log('Regions data:', result);
+      return result;
+    }
+  })
+
+  // 에러 처리 추가
+  if (error) {
+    console.error('Error fetching members:', error);
+    return <div>에러가 발생했습니다: {(error as Error).message}</div>;
+  }
+
+  // 페이지네이션 계산
+  const totalPages = Math.ceil((memberData?.total_count || 0) / Number(pageSize))
+  const pageNumbers = Array.from({ length: Math.min(10, totalPages) }, (_, i) => i + 1)
 
   return (
     <div className="space-y-4">
@@ -43,37 +112,61 @@ export function MemberList() {
       <Card className="p-4">
         <div className="space-y-4">
           <div className="flex gap-4">
-            <Input placeholder="회원명 검색" className="w-1/3" />
+            <Input 
+              placeholder="이메일, 닉네임 검색" 
+              className="w-1/3"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
             <div className="flex gap-2 w-2/3">
-              <Select className="w-1/3">
+              <Select 
+                value={filters.gender}
+                onValueChange={(value) => setFilters(prev => ({ ...prev, gender: value }))}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="회원 등급" />
+                  <SelectValue placeholder="성별" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="normal">일반</SelectItem>
-                  <SelectItem value="premium">프리미엄</SelectItem>
-                  <SelectItem value="vip">VIP</SelectItem>
+                  <SelectItem value="all">전체</SelectItem>
+                  <SelectItem value="male">남성</SelectItem>
+                  <SelectItem value="female">여성</SelectItem>
                 </SelectContent>
               </Select>
-              <Select className="w-1/3">
+              <Select 
+                value={filters.provider}
+                onValueChange={(value) => setFilters(prev => ({ ...prev, provider: value }))}
+                className="w-1/3"
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="가입 경로" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="direct">직접 가입</SelectItem>
-                  <SelectItem value="kakao">카카오</SelectItem>
-                  <SelectItem value="naver">네이버</SelectItem>
+                  <SelectItem value="all">전체</SelectItem>
+                  <SelectItem value="email">이메일</SelectItem>
                   <SelectItem value="google">구글</SelectItem>
+                  <SelectItem value="facebook">페이스북</SelectItem>
                 </SelectContent>
               </Select>
-              <Select className="w-1/3">
+              <Select 
+                value={filters.city?.toString()}
+                onValueChange={(value) => 
+                  setFilters(prev => ({ 
+                    ...prev, 
+                    city: value === 'all' ? null : Number(value) 
+                  }))
+                }
+                className="w-1/3"
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="상태" />
+                  <SelectValue placeholder="관심지역" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">활성</SelectItem>
-                  <SelectItem value="inactive">비활성</SelectItem>
-                  <SelectItem value="suspended">정지</SelectItem>
+                  <SelectItem value="all">전체</SelectItem>
+                  {regions?.map((region) => (
+                    <SelectItem key={region.id} value={region.id.toString()}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -101,39 +194,19 @@ export function MemberList() {
                 <CollapsibleContent className="w-full">
                   <div className="pt-4 mt-4 border-t border-border">
                     <div className="flex items-center gap-4">
-                      <Input placeholder="이메일 검색" className="w-1/6" />
                       <Input placeholder="전화번호 검색" className="w-1/6" />
+                      <Select className="w-1/6">
+                        <SelectTrigger>
+                          <SelectValue placeholder="관심카테고리" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">전체</SelectItem>
+                          <SelectItem value="plastic">성형외과</SelectItem>
+                          <SelectItem value="dermatology">피부과</SelectItem>
+                          <SelectItem value="dental">치과</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <div className="flex items-center gap-8 ml-4">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="isVerified" 
-                            checked={filters.isVerified}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({...prev, isVerified: checked as boolean}))
-                            }
-                          />
-                          <label
-                            htmlFor="isVerified"
-                            className="text-sm font-medium leading-none"
-                          >
-                            인증
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="isPremium"
-                            checked={filters.isPremium}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({...prev, isPremium: checked as boolean}))
-                            }
-                          />
-                          <label
-                            htmlFor="isPremium"
-                            className="text-sm font-medium leading-none"
-                          >
-                            프리미엄
-                          </label>
-                        </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox 
                             id="hasReviews"
@@ -177,16 +250,16 @@ export function MemberList() {
       {/* 테이블 헤더와 정렬 옵션 */}
       <div className="flex justify-between items-center mb-2">
         <div className="text-sm text-muted-foreground">
-          총 <span className="font-medium text-primary">{10}</span>명의 회원
+          총 <span className="font-medium text-primary">{memberData?.total_count || 0}</span>명의 회원
         </div>
-        <Select defaultValue="name">
+        <Select defaultValue="latest">
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="정렬 기준" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">이름 순</SelectItem>
-            <SelectItem value="date">가입일자 순</SelectItem>
-            <SelectItem value="grade">등급 순</SelectItem>
+            <SelectItem value="latest">최신순</SelectItem>
+            <SelectItem value="name">이름순</SelectItem>
+            <SelectItem value="login">접속순</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -196,25 +269,112 @@ export function MemberList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>번호</TableHead>
-              <TableHead>프로필</TableHead>
-              <TableHead>이름</TableHead>
-              <TableHead>이메일</TableHead>
-              <TableHead>전화번호</TableHead>
-              <TableHead>등급</TableHead>
-              <TableHead>가입경로</TableHead>
-              <TableHead>상태</TableHead>
-              <TableHead>가입일</TableHead>
-              <TableHead>관리</TableHead>
+              <TableHead className="w-[60px]">번호</TableHead>
+              <TableHead className="w-[80px]">이미지</TableHead>
+              <TableHead className="w-[200px]">이메일</TableHead>
+              <TableHead className="w-[120px]">닉네임</TableHead>
+              <TableHead className="w-[50px]">성별</TableHead>
+              <TableHead className="w-[140px]">전화번호</TableHead>
+              <TableHead className="w-[100px]">가입경로</TableHead>
+              <TableHead className="w-[160px]">최근접속</TableHead>
+              <TableHead className="w-[200px]">관심도시</TableHead>
+              <TableHead className="w-[120px]">관심카테고리</TableHead>
+              <TableHead className="w-[60px]">관리</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* 샘플 데이터는 나중에 추가하겠습니다 */}
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={12} className="h-24 text-center">
+                  로딩중...
+                </TableCell>
+              </TableRow>
+            ) : memberData?.data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={12} className="h-24 text-center">
+                  회원이 없습니다
+                </TableCell>
+              </TableRow>
+            ) : (
+              memberData?.data.map((member, index) => (
+                <TableRow key={member.id}>
+                  <TableCell>
+                    {(currentPage - 1) * Number(pageSize) + index + 1}
+                  </TableCell>
+                  <TableCell>
+                    {member.avatar_url && (
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-muted">
+                        <img 
+                          src={member.avatar_url} 
+                          alt={member.nickname}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="font-medium">{member.email}</TableCell>
+                  <TableCell>{member.nickname}</TableCell>
+                  <TableCell>
+                    {member.gender && (
+                      <Badge variant="outline">
+                        {member.gender === 'male' ? '남성' : '여성'}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>{member.phone}</TableCell>
+                  <TableCell>{member.provider}</TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(member.last_sign_in_at).toLocaleString()}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">
+                      {member.city_name}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <Button variant="link" className="p-0 h-auto font-normal">
+                          상세보기
+                        </Button>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-auto">
+                        <div className="flex flex-wrap gap-1">
+                          {member.categories.map((category) => (
+                            <Badge key={category} variant="secondary">
+                              {category}
+                            </Badge>
+                          ))}
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>상세보기</DropdownMenuItem>
+                        <DropdownMenuItem>수정하기</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">
+                          삭제하기
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </Card>
 
-      {/* 페이지네이션과 등록 버튼 */}
+      {/* 페이지네이션 */}
       <div className="flex items-center justify-between">
         <Select value={pageSize} onValueChange={setPageSize}>
           <SelectTrigger className="w-[180px]">
@@ -229,20 +389,48 @@ export function MemberList() {
 
         <div className="flex-1 flex justify-center">
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">처음</Button>
-            <Button variant="outline" size="sm">이전</Button>
-            <Button variant="outline" size="sm">1</Button>
-            <Button variant="outline" size="sm">2</Button>
-            <Button variant="outline" size="sm">3</Button>
-            <Button variant="outline" size="sm">4</Button>
-            <Button variant="outline" size="sm">5</Button>
-            <Button variant="outline" size="sm">6</Button>
-            <Button variant="outline" size="sm">7</Button>
-            <Button variant="outline" size="sm">8</Button>
-            <Button variant="outline" size="sm">9</Button>
-            <Button variant="outline" size="sm">10</Button>
-            <Button variant="outline" size="sm">다음</Button>
-            <Button variant="outline" size="sm">마지막</Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              처음
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              이전
+            </Button>
+            {pageNumbers.map((number) => (
+              <Button
+                key={number}
+                variant={currentPage === number ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(number)}
+              >
+                {number}
+              </Button>
+            ))}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              다음
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              마지막
+            </Button>
           </div>
         </div>
 

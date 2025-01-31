@@ -5,6 +5,7 @@ import { SideMenu } from '@/components/layout/side-menu'
 import { Footer } from '@/components/layout/footer'
 import { ThemeProvider } from "@/providers/theme-provider";
 import { cn } from "@/lib/utils";
+import { Providers } from './providers'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,22 +25,24 @@ export default function RootLayout({
         inter.className,
         "min-h-screen bg-background antialiased"
       )}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="flex min-h-screen">
-            <SideMenu isCollapsed={false} />
-            <div className="flex-1 flex flex-col">
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
+        <Providers>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="flex min-h-screen">
+              <SideMenu isCollapsed={false} />
+              <div className="flex-1 flex flex-col">
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+              </div>
             </div>
-          </div>
-        </ThemeProvider>
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

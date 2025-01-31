@@ -44,4 +44,24 @@ export const RegionService = {
     if (error) throw error
     return data
   }
+}
+
+export interface Region {
+  id: number
+  name: string
+}
+
+export async function getRegions(): Promise<Region[]> {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('id, name')
+    .eq('is_active', true)
+    .order('sort_order')
+
+  if (error) {
+    console.error('Error fetching regions:', error)
+    throw error
+  }
+
+  return data || []
 } 
