@@ -8,7 +8,8 @@ import {
   Globe,
   Facebook,
   Youtube,
-  Instagram
+  Instagram,
+  Clock
 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -174,7 +175,19 @@ export default async function HospitalDetailPage({ searchParams }: Props) {
 
               {/* 네 번째 줄: 설명 */}
               {hospitalData.description && (
-                <p className="text-muted-foreground">{hospitalData.description}</p>
+                <div className="text-sm text-muted-foreground whitespace-pre-line">
+                  {hospitalData.description}
+                </div>
+              )}
+
+              {/* 다섯 번째 줄: 진료시간 */}
+              {hospitalData.business_hours && (
+                <div className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 mt-1 text-muted-foreground shrink-0" />
+                  <div className="text-sm text-muted-foreground whitespace-pre-line">
+                    {hospitalData.business_hours}
+                  </div>
+                </div>
               )}
 
               {/* 다섯 번째 줄: 통계 */}
@@ -209,12 +222,6 @@ export default async function HospitalDetailPage({ searchParams }: Props) {
                 <p className="text-base">{hospitalData.email}</p>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">영업시간</label>
-                <p className="text-base leading-relaxed">
-                  {formatBusinessHours(hospitalData.business_hours)}
-                </p>
-              </div>
-              <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">평점</label>
                 <p className="text-base">{hospitalData.average_rating} / 5.0</p>
               </div>
@@ -227,39 +234,29 @@ export default async function HospitalDetailPage({ searchParams }: Props) {
         </Card>
 
         {/* 상세 설명 */}
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <h2 className="text-xl font-semibold">상세 정보</h2>
           </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none 
-              prose-headings:font-semibold 
-              prose-h1:text-xl 
-              prose-h2:text-lg 
-              prose-h3:text-base 
-              prose-p:text-muted-foreground 
-              prose-strong:font-semibold 
-              prose-strong:text-foreground
-              prose-ul:list-disc 
-              prose-ul:list-inside
-              prose-ol:list-decimal 
-              prose-ol:list-inside
-              prose-li:text-muted-foreground
-              prose-table:border-collapse
-              prose-th:border 
-              prose-th:border-border 
-              prose-th:p-2
-              prose-td:border 
-              prose-td:border-border 
-              prose-td:p-2
-              prose-img:rounded-md
-              prose-img:my-4
-              prose-a:text-primary
-              prose-a:no-underline
-              hover:prose-a:underline
-            ">
-              <div dangerouslySetInnerHTML={{ __html: hospitalData.detail_content }} />
-            </div>
+          <CardContent className="p-0">
+            <div 
+              dangerouslySetInnerHTML={{ __html: hospitalData.detail_content }} 
+              className="w-full prose prose-sm p-6
+                max-h-[600px]
+                overflow-y-auto
+                [&::-webkit-scrollbar]:w-4
+                [&::-webkit-scrollbar-track]:bg-slate-200
+                [&::-webkit-scrollbar-thumb]:bg-slate-400
+                [&::-webkit-scrollbar-thumb]:rounded-md
+                [&::-webkit-scrollbar-thumb]:border
+                [&::-webkit-scrollbar-thumb]:border-slate-200
+                hover:[&::-webkit-scrollbar-thumb]:bg-slate-500
+                [&_img]:!rounded-lg
+                [&_img]:!max-h-none
+                [&_img]:!w-full
+                [&_img]:!object-fill
+              "
+            />
           </CardContent>
         </Card>
 

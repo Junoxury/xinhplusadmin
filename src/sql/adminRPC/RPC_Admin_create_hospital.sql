@@ -35,6 +35,7 @@ begin
       is_advertised,
       is_recommended,
       is_member,
+      is_google,
       google_map_url,
       has_discount
     )
@@ -59,6 +60,7 @@ begin
       (p_hospital_data->>'is_advertised')::boolean,
       (p_hospital_data->>'is_recommended')::boolean,
       (p_hospital_data->>'is_member')::boolean,
+      (p_hospital_data->>'is_google')::boolean,
       (p_hospital_data->>'google_map_url')::varchar,
       false
     )

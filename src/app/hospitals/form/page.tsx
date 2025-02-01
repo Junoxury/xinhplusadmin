@@ -275,6 +275,7 @@ export default function HospitalForm() {
         is_advertised: values.is_advertised,
         is_recommended: values.is_recommended,
         is_member: values.is_member,
+        is_google: values.is_google,
         google_map_url: values.google_map_url || null
       }
 
