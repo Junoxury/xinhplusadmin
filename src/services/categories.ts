@@ -149,5 +149,16 @@ export const CategoryService = {
       .eq('id', id)
 
     if (error) throw error
+  },
+
+  async getAllDepth3Categories() {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('depth', 3)
+      .order('sort_order')
+
+    if (error) throw error
+    return data
   }
 } 

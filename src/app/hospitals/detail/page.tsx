@@ -42,9 +42,8 @@ function groupCategories(categories: HospitalDetail['categories']) {
         depth3: []
       })
     }
-    if (cat.depth3) {
-      grouped.get(cat.depth2.id).depth3.push(...cat.depth3)
-    }
+    // depth3 카테고리를 바로 추가
+    grouped.get(cat.depth2.id).depth3.push(cat.depth3)
   })
 
   return Array.from(grouped.values())
@@ -125,21 +124,28 @@ export default async function HospitalDetailPage({ searchParams }: Props) {
 
               {/* 두 번째 줄: 카테고리 */}
               <div className="space-y-2">
-                {groupCategories(hospitalData.categories).map((group, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Badge variant="secondary" className="shrink-0">
-                      {group.depth2.label}
-                    </Badge>
-                    <span className="text-muted-foreground">:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {group.depth3.map((cat, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {cat.label}
-                        </Badge>
-                      ))}
+                {/* depth2 카테고리 반복 */}
+                {Array.from(new Set(hospitalData.categories?.map(cat => cat.depth2.id))).map(depth2Id => {
+                  // 현재 depth2에 해당하는 카테고리 찾기
+                  const currentCategory = hospitalData.categories?.find(cat => cat.depth2.id === depth2Id)
+                  
+                  return (
+                    <div key={depth2Id} className="flex items-center gap-2">
+                      <Badge variant="secondary" className="shrink-0">
+                        {currentCategory?.depth2.label}
+                      </Badge>
+                      <span className="text-muted-foreground">:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {/* depth3 배열 순회 */}
+                        {currentCategory?.depth3.map((depth3: any, idx: number) => (
+                          <Badge key={`${depth2Id}-${idx}`} variant="outline" className="text-xs">
+                            {depth3.label}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               {/* 세 번째 줄: 위치와 뱃지들 */}
@@ -149,11 +155,19 @@ export default async function HospitalDetailPage({ searchParams }: Props) {
                   <span>{hospitalData.city_name_ko}</span>
                 </div>
                 <div className="flex gap-2">
+                  {hospitalData.is_advertised && (
+                    <Badge>광고</Badge>
+                  )}
                   {hospitalData.is_recommended && (
                     <Badge variant="secondary">추천</Badge>
                   )}
-                  {hospitalData.is_advertised && (
-                    <Badge>광고</Badge>
+                  {hospitalData.is_member && (
+                    <Badge variant="outline">멤버</Badge>
+                  )}
+                  {hospitalData.is_google && (
+                    <Badge variant="outline" className="border-blue-500 text-blue-500">
+                      구글
+                    </Badge>
                   )}
                 </div>
               </div>

@@ -78,6 +78,115 @@ module.exports = {
   			"accordion-down": "accordion-down 0.2s ease-out",
   			"accordion-up": "accordion-up 0.2s ease-out",
   		},
+  		typography: {
+  			DEFAULT: {
+  				css: {
+  					maxWidth: 'none',
+  					color: '#18181b',
+  					backgroundColor: 'white',
+  					p: {
+  						color: '#18181b',
+  						marginTop: '1em',
+  						marginBottom: '1em',
+  					},
+  					'h1,h2,h3,h4,h5,h6': {
+  						color: '#18181b',
+  						fontWeight: '600',
+  					},
+  					h1: {
+  						fontSize: '1.875em',
+  					},
+  					h2: {
+  						fontSize: '1.5em',
+  					},
+  					h3: {
+  						fontSize: '1.25em',
+  					},
+  					ul: {
+  						color: '#18181b',
+  						listStyleType: 'disc',
+  						marginTop: '1em',
+  						marginBottom: '1em',
+  						paddingLeft: '1.625em',
+  					},
+  					ol: {
+  						color: '#18181b',
+  						listStyleType: 'decimal',
+  						marginTop: '1em',
+  						marginBottom: '1em',
+  						paddingLeft: '1.625em',
+  					},
+  					li: {
+  						color: '#18181b',
+  						marginTop: '0.5em',
+  						marginBottom: '0.5em',
+  					},
+  					blockquote: {
+  						color: '#18181b',
+  						borderLeftColor: 'hsl(var(--primary))',
+  						borderLeftWidth: '4px',
+  						marginTop: '1.6em',
+  						marginBottom: '1.6em',
+  						paddingLeft: '1em',
+  					},
+  					code: {
+  						color: '#18181b',
+  						backgroundColor: 'hsl(var(--muted))',
+  						padding: '0.2em 0.4em',
+  						borderRadius: '0.25rem',
+  						fontSize: '0.875em',
+  					},
+  					pre: {
+  						backgroundColor: 'hsl(var(--muted))',
+  						padding: '1em',
+  						borderRadius: '0.375rem',
+  						overflow: 'auto',
+  					},
+  					hr: {
+  						borderColor: 'hsl(var(--border))',
+  						marginTop: '2em',
+  						marginBottom: '2em',
+  					},
+  					table: {
+  						width: '100%',
+  						marginTop: '2em',
+  						marginBottom: '2em',
+  						borderCollapse: 'collapse',
+  						border: '1px solid #e5e7eb',
+  					},
+  					'thead': {
+  						backgroundColor: '#f3f4f6',
+  						borderBottom: '2px solid #e5e7eb',
+  					},
+  					'thead th': {
+  						color: '#18181b',
+  						padding: '0.75em',
+  						fontWeight: '600',
+  						borderRight: '1px solid #e5e7eb',
+  					},
+  					'thead th:last-child': {
+  						borderRight: 'none',
+  					},
+  					'tbody td': {
+  						color: '#18181b',
+  						padding: '0.75em',
+  						borderTop: '1px solid #e5e7eb',
+  						borderRight: '1px solid #e5e7eb',
+  					},
+  					'tbody td:last-child': {
+  						borderRight: 'none',
+  					},
+  					'tbody tr:hover': {
+  						backgroundColor: '#f8fafc',
+  					},
+  					img: {
+  						marginTop: '2em',
+  						marginBottom: '2em',
+  						borderRadius: '0.375rem',
+  					},
+  				},
+  			},
+  		},
   	}
   },
   plugins: [

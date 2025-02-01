@@ -13,6 +13,7 @@ export interface GetHospitalsParams {
   is_advertised?: boolean
   is_recommended?: boolean
   is_member?: boolean
+  is_google?: boolean
   hasDiscount?: boolean
 }
 
@@ -38,12 +39,12 @@ export const HospitalService = {
     return data
   },
 
-  async create(hospital: Omit<Hospital, 'id' | 'created_at' | 'updated_at'>) {
+  async create(hospitalData: any, categories: any[]) {
     const { data, error } = await supabase
-      .from('hospitals')
-      .insert(hospital)
-      .select()
-      .single()
+      .rpc('create_hospital', {
+        p_hospital_data: hospitalData,
+        p_categories: categories
+      })
 
     if (error) throw error
     return data
@@ -77,6 +78,7 @@ export const HospitalService = {
     is_advertised,
     is_recommended,
     is_member,
+    is_google,
     hasDiscount,
     page = 1,
     pageSize = 10,
@@ -90,6 +92,7 @@ export const HospitalService = {
         p_is_advertised: is_advertised,
         p_is_recommended: is_recommended,
         p_is_member: is_member,
+        p_is_google: is_google,
         p_has_discount: hasDiscount,
         p_page: page,
         p_page_size: pageSize,
@@ -107,5 +110,15 @@ export const HospitalService = {
     
     if (error) throw error
     return data[0]
+  },
+
+  // 병원 삭제 메서드 추가
+  async deleteHospital(hospitalId: number) {
+    const { error } = await supabase.rpc(
+      'delete_hospital_with_categories',
+      { p_hospital_id: hospitalId }
+    )
+    
+    if (error) throw error
   }
 } 

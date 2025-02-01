@@ -32,6 +32,9 @@ import { RegionService, type City } from '@/services/regions'
 import Image from 'next/image'
 import { CategoryService, type Category } from '@/services/categories'
 import { useRouter } from "next/navigation"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
+import Link from 'next/link'
 
 export function HospitalList() {
   const [hospitals, setHospitals] = useState<Hospital[]>([])
@@ -49,7 +52,7 @@ export function HospitalList() {
   const [selectedDepth3Id, setSelectedDepth3Id] = useState<string>("0")
   const [isOpen, setIsOpen] = useState(false)
   const [filters, setFilters] = useState({
-    status: undefined as undefined | 'ad' | 'recommended' | 'member' | 'google'
+    status: 'all' as 'all' | 'ad' | 'recommended' | 'member' | 'google'
   })
   const [cities, setCities] = useState<City[]>([])
   const [depth2Categories, setDepth2Categories] = useState<Category[]>([])
@@ -108,6 +111,7 @@ export function HospitalList() {
       is_advertised: filters.status === 'ad' ? true : undefined,
       is_recommended: filters.status === 'recommended' ? true : undefined,
       is_member: filters.status === 'member' ? true : undefined,
+      is_google: filters.status === 'google' ? true : undefined,
       page: 1
     }))
   }, [filters.status])
@@ -154,6 +158,18 @@ export function HospitalList() {
     }))
   }
 
+  const handleDelete = async (e: React.MouseEvent, hospitalId: number) => {
+    e.stopPropagation() // row 클릭 이벤트 전파 방지
+    try {
+      await HospitalService.deleteHospital(hospitalId)
+      toast.success('병원이 성공적으로 삭제되었습니다')
+      loadHospitals() // 목록 새로고침
+    } catch (error) {
+      console.error('병원 삭제 실패:', error)
+      toast.error('병원을 삭제하는 중 오류가 발생했습니다')
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* 필터 섹션 */}
@@ -173,7 +189,7 @@ export function HospitalList() {
                   <SelectValue placeholder="상태" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={undefined}>전체</SelectItem>
+                  <SelectItem value="all">전체</SelectItem>
                   <SelectItem value="ad">광고</SelectItem>
                   <SelectItem value="recommended">추천</SelectItem>
                   <SelectItem value="member">멤버</SelectItem>
@@ -277,6 +293,7 @@ export function HospitalList() {
               <TableHead>광고</TableHead>
               <TableHead>추천</TableHead>
               <TableHead>멤버</TableHead>
+              <TableHead>구글</TableHead>
               <TableHead className="text-right">관리</TableHead>
             </TableRow>
           </TableHeader>
@@ -309,21 +326,49 @@ export function HospitalList() {
                   <TableCell>{hospital.is_advertised ? "Y" : "N"}</TableCell>
                   <TableCell>{hospital.is_recommended ? "Y" : "N"}</TableCell>
                   <TableCell>{hospital.is_member ? "Y" : "N"}</TableCell>
+                  <TableCell>{hospital.is_google ? "Y" : "N"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={(e) => e.stopPropagation()} // row 클릭 이벤트 전파 방지
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>병원 삭제</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              정말 이 병원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+                              취소
+                            </AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={(e) => handleDelete(e, hospital.id)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              삭제
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   조회된 병원이 없습니다.
                 </TableCell>
               </TableRow>
@@ -370,8 +415,11 @@ export function HospitalList() {
         <Button 
           size="lg"
           className="bg-primary hover:bg-primary/90"
+          asChild
         >
-          병원 등록
+          <Link href="/hospitals/form">
+            병원 등록
+          </Link>
         </Button>
       </div>
     </div>

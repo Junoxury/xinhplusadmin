@@ -1,5 +1,6 @@
--- 1. 기존 함수 삭제
-DROP FUNCTION IF EXISTS get_hospitals_list(bigint,bigint,bigint,boolean,boolean,boolean,boolean,integer,integer,integer,text);
+-- 1. 기존 함수들 모두 삭제
+DROP FUNCTION IF EXISTS get_hospitals_list(bigint,bigint,bigint,bigint,bigint,boolean,boolean,boolean,boolean,int,int,int,text);
+DROP FUNCTION IF EXISTS get_hospitals_list(bigint,bigint,bigint,bigint,bigint,boolean,boolean,boolean,boolean,boolean,int,int,int,text);
 
 -- 2. 새 함수 생성
 CREATE OR REPLACE FUNCTION get_hospitals_list(
@@ -11,6 +12,7 @@ CREATE OR REPLACE FUNCTION get_hospitals_list(
     p_is_advertised boolean DEFAULT NULL,
     p_is_recommended boolean DEFAULT NULL,
     p_is_member boolean DEFAULT NULL,
+    p_is_google boolean DEFAULT NULL,  -- 구글 파라미터 추가
     p_has_discount boolean DEFAULT NULL,
     p_page_size int DEFAULT 10,
     p_page int DEFAULT 1,
@@ -29,6 +31,7 @@ RETURNS TABLE (
     is_advertised boolean,
     is_recommended boolean,
     is_member boolean,
+    is_google boolean,    -- 추가된 필드
     has_discount boolean,
     view_count bigint,
     like_count bigint,
@@ -75,6 +78,7 @@ BEGIN
         AND (p_is_advertised IS NULL OR h.is_advertised = p_is_advertised)
         AND (p_is_recommended IS NULL OR h.is_recommended = p_is_recommended)
         AND (p_is_member IS NULL OR h.is_member = p_is_member)
+        AND (p_is_google IS NULL OR h.is_google = p_is_google)  -- 구글 조건 추가
         AND (p_has_discount IS NULL OR h.has_discount = p_has_discount);
 
     RETURN QUERY
@@ -150,6 +154,7 @@ BEGIN
             AND (p_is_advertised IS NULL OR h.is_advertised = p_is_advertised)
             AND (p_is_recommended IS NULL OR h.is_recommended = p_is_recommended)
             AND (p_is_member IS NULL OR h.is_member = p_is_member)
+            AND (p_is_google IS NULL OR h.is_google = p_is_google)  -- 구글 조건 추가
             AND (p_has_discount IS NULL OR h.has_discount = p_has_discount)
     ),
     ranked_results AS (
@@ -189,6 +194,7 @@ BEGIN
         r.is_advertised,
         r.is_recommended,
         r.is_member,
+        r.is_google,    -- 추가된 필드
         r.has_discount,
         r.view_count,
         r.like_count,
