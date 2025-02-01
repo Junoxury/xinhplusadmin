@@ -59,6 +59,7 @@ const menuItems = [
     title: '마케팅 관리',
     href: '/marketing',
     icon: LayoutGrid,
+    disabled: true,
     subItems: [
       {
         title: '배너관리',
@@ -73,7 +74,8 @@ const menuItems = [
   {
     title: '한국원정관리',
     href: '/korea-visits',
-    icon: Globe
+    icon: Globe,
+    disabled: true
   },
   {
     title: '관리자관리',
@@ -96,6 +98,7 @@ const menuItems = [
       {
         title: 'API 관리',
         href: '/settings/apis',
+        disabled: true
       }
     ]
   },
@@ -106,7 +109,7 @@ export function SideMenu() {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const renderMenuItem = (menu: typeof menuItems[0]) => {
-    // 하위 메뉴가 있는 경우
+    // 하위 메뉴가 있고 접혀있는 경우
     if (menu.subItems && isCollapsed) {
       return (
         <Popover>
@@ -115,63 +118,102 @@ export function SideMenu() {
               className={cn(
                 "flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer",
                 pathname.startsWith(menu.href) ? "bg-accent" : "transparent",
+                menu.disabled && "opacity-50 cursor-not-allowed hover:bg-transparent"
               )}
             >
               <menu.icon className="h-4 w-4" />
             </div>
           </PopoverTrigger>
-          <PopoverContent side="right" className="p-0 w-40">
-            <div className="space-y-1 p-1">
-              {menu.subItems.map((subItem) => (
-                <Link
-                  key={subItem.href}
-                  href={subItem.href}
-                  className={cn(
-                    "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                    pathname === subItem.href ? "bg-accent" : "transparent"
-                  )}
-                >
-                  {subItem.title}
-                </Link>
-              ))}
-            </div>
-          </PopoverContent>
+          {!menu.disabled && (
+            <PopoverContent side="right" className="p-0 w-40">
+              <div className="space-y-1 p-1">
+                {menu.subItems.map((subItem) => (
+                  <Link
+                    key={subItem.href}
+                    href={subItem.href}
+                    className={cn(
+                      "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                      pathname === subItem.href ? "bg-accent" : "transparent"
+                    )}
+                  >
+                    {subItem.title}
+                  </Link>
+                ))}
+              </div>
+            </PopoverContent>
+          )}
         </Popover>
       )
     }
 
-    // 하위 메뉴가 있는 경우 (펼쳐진 상태)
+    // 하위 메뉴가 있고 펼쳐진 경우
     if (menu.subItems && !isCollapsed) {
       return (
         <>
           <div
             className={cn(
               "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-              pathname.startsWith(menu.href) ? "bg-accent" : "transparent"
+              pathname.startsWith(menu.href) ? "bg-accent" : "transparent",
+              menu.disabled && "opacity-50 cursor-not-allowed hover:bg-transparent"
             )}
           >
             <menu.icon className="h-4 w-4 mr-2" />
-            {menu.title}
+            <span className="flex-1">{menu.title}</span>
+            {menu.disabled && (
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                준비중
+              </span>
+            )}
           </div>
-          <div className="ml-6 mt-1 space-y-1">
-            {menu.subItems.map((subItem) => (
-              <Link
-                key={subItem.href}
-                href={subItem.href}
-                className={cn(
-                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                  pathname === subItem.href ? "bg-accent" : "transparent"
-                )}
-              >
-                {subItem.title}
-              </Link>
-            ))}
-          </div>
+          {!menu.disabled && (
+            <div className="ml-6 mt-1 space-y-1">
+              {menu.subItems.map((subItem) => (
+                <Link
+                  key={subItem.href}
+                  href={subItem.disabled ? "#" : subItem.href}
+                  className={cn(
+                    "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                    pathname === subItem.href ? "bg-accent" : "transparent",
+                    subItem.disabled && "opacity-50 cursor-not-allowed hover:bg-transparent"
+                  )}
+                  onClick={e => subItem.disabled && e.preventDefault()}
+                >
+                  <span className="flex-1">{subItem.title}</span>
+                  {subItem.disabled && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      준비중
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
         </>
       )
     }
 
     // 일반 메뉴인 경우
+    if (menu.disabled) {
+      return (
+        <div
+          className={cn(
+            "flex items-center rounded-lg px-3 py-2 text-sm font-medium opacity-50 cursor-not-allowed",
+            isCollapsed && "justify-center"
+          )}
+        >
+          <menu.icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
+          {!isCollapsed && (
+            <>
+              <span className="flex-1">{menu.title}</span>
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                준비중
+              </span>
+            </>
+          )}
+        </div>
+      )
+    }
+
     return (
       <Link
         href={menu.href}
