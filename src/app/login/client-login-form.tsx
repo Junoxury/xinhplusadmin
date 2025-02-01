@@ -46,11 +46,7 @@ export default function LoginForm() {
       })
 
       if (signInError) throw new Error('이메일 또는 비밀번호가 올바르지 않습니다')
-
-      if (user?.role !== 'admin') {
-        await supabase.auth.signOut()
-        throw new Error('이메일 또는 비밀번호가 올바르지 않습니다')
-      }
+      
 
       toast.success('로그인되었습니다')
       router.push('/dashboard')

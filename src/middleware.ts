@@ -22,14 +22,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // role이 admin이 아닌 경우 처리
-  if (session?.user && session.user.role !== 'admin' && !isPublicPath) {
-    // 로그아웃 처리
-    await supabase.auth.signOut()
-    const url = new URL('/login', req.url)
-    url.searchParams.set('message', '관리자 권한이 필요합니다')
-    return NextResponse.redirect(url)
-  }
 
   // 이미 로그인된 상태에서 로그인 페이지에 접근하려는 경우
   if (session && isPublicPath) {
