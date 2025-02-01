@@ -1,7 +1,6 @@
 import { Metadata } from "next"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import LoginForm from "./client-login-form"
 
 export const metadata: Metadata = {
   title: "Xinh+ 관리자",
@@ -27,33 +26,7 @@ export default function LoginPage() {
               관리자 계정으로 로그인해주세요
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form action="/api/auth/login" method="POST">
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Input
-                    id="email"
-                    placeholder="name@example.com"
-                    type="email"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    autoCorrect="off"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Input
-                    id="password"
-                    placeholder="비밀번호"
-                    type="password"
-                    autoComplete="current-password"
-                  />
-                </div>
-                <Button className="w-full">
-                  로그인
-                </Button>
-              </div>
-            </form>
-          </CardContent>
+          <LoginForm />
         </Card>
       </div>
     </div>
