@@ -160,6 +160,41 @@ export function ProcedureList() {
     }
   }, [priceRange])
 
+  const [selectedRegion, setSelectedRegion] = useState<string>('전체')
+
+  const handleRegionChange = (value: string) => {
+    setSelectedRegion(value)
+    // filters의 city 값도 함께 업데이트
+    setFilters(prev => ({ 
+      ...prev, 
+      city: value === '전체' ? null : value 
+    }))
+  }
+
+  // 페이지네이션 관련 함수들 추가
+  const handleFirstPage = () => setCurrentPage(1)
+  const handleLastPage = () => setCurrentPage(totalPages)
+  const handlePrevPage = () => setCurrentPage(prev => Math.max(1, prev - 1))
+  const handleNextPage = () => setCurrentPage(prev => Math.min(totalPages, prev + 1))
+
+  // 표시할 페이지 번호 계산
+  const getPageNumbers = () => {
+    const maxPages = 10 // 한 번에 표시할 최대 페이지 수
+    const halfMaxPages = Math.floor(maxPages / 2)
+    
+    let startPage = Math.max(1, currentPage - halfMaxPages)
+    let endPage = Math.min(totalPages, startPage + maxPages - 1)
+    
+    if (endPage - startPage + 1 < maxPages) {
+      startPage = Math.max(1, endPage - maxPages + 1)
+    }
+    
+    return Array.from(
+      { length: endPage - startPage + 1 }, 
+      (_, i) => startPage + i
+    )
+  }
+
   return (
     <div className="space-y-4">
       {/* 필터 섹션 */}
@@ -169,12 +204,12 @@ export function ProcedureList() {
             <Input placeholder="시술명 검색" className="w-1/4" />
             <div className="flex gap-2 w-3/4">
               <Select 
-                value={filters.depth2Category || undefined}
+                value={filters.depth2Category || '전체'}
                 onValueChange={(value) => 
                   setFilters(prev => ({ 
                     ...prev, 
-                    depth2Category: value || null,
-                    depth3Category: null 
+                    depth2Category: value === '전체' ? null : value,
+                    depth3Category: null // 상위 카테고리 변경 시 하위 카테고리 초기화
                   }))
                 }
                 className="w-1/4"
@@ -183,7 +218,7 @@ export function ProcedureList() {
                   <SelectValue placeholder="시술 분류" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={undefined}>전체</SelectItem>
+                  <SelectItem value="전체">전체</SelectItem>
                   {depth2Categories?.map((category) => (
                     <SelectItem 
                       key={category.id} 
@@ -195,11 +230,11 @@ export function ProcedureList() {
                 </SelectContent>
               </Select>
               <Select 
-                value={filters.depth3Category || undefined}
+                value={filters.depth3Category || '전체'}
                 onValueChange={(value) => 
                   setFilters(prev => ({ 
                     ...prev, 
-                    depth3Category: value || null 
+                    depth3Category: value === '전체' ? null : value 
                   }))
                 }
                 className="w-1/4"
@@ -209,7 +244,7 @@ export function ProcedureList() {
                   <SelectValue placeholder="세부 분류" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={undefined}>전체</SelectItem>
+                  <SelectItem value="전체">전체</SelectItem>
                   {depth3Categories?.map((category) => (
                     <SelectItem 
                       key={category.id} 
@@ -220,18 +255,15 @@ export function ProcedureList() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select 
-                value={filters.city || undefined}
-                onValueChange={(value) => 
-                  setFilters(prev => ({ ...prev, city: value || null }))
-                }
-                className="w-1/4"
+              <Select
+                value={selectedRegion}
+                onValueChange={handleRegionChange}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="지역" />
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="지역 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={undefined}>전체</SelectItem>
+                  <SelectItem value="전체">전체</SelectItem>
                   {regions?.map((region) => (
                     <SelectItem key={region.id} value={region.id.toString()}>
                       {region.name}
@@ -240,11 +272,11 @@ export function ProcedureList() {
                 </SelectContent>
               </Select>
               <Select 
-                value={filters.status.join(',') || undefined}
+                value={filters.status.join(',') || '전체'}
                 onValueChange={(value) => 
                   setFilters(prev => ({ 
                     ...prev, 
-                    status: value ? value.split(',') : [] 
+                    status: value === '전체' ? [] : value.split(',')
                   }))
                 }
                 className="w-1/4"
@@ -253,7 +285,7 @@ export function ProcedureList() {
                   <SelectValue placeholder="상태" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={undefined}>전체</SelectItem>
+                  <SelectItem value="전체">전체</SelectItem>
                   <SelectItem value="ad">광고</SelectItem>
                   <SelectItem value="recommended">추천</SelectItem>
                   <SelectItem value="discount">할인</SelectItem>
@@ -488,20 +520,50 @@ export function ProcedureList() {
 
         <div className="flex-1 flex justify-center">
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">처음</Button>
-            <Button variant="outline" size="sm">이전</Button>
-            <Button variant="outline" size="sm">1</Button>
-            <Button variant="outline" size="sm">2</Button>
-            <Button variant="outline" size="sm">3</Button>
-            <Button variant="outline" size="sm">4</Button>
-            <Button variant="outline" size="sm">5</Button>
-            <Button variant="outline" size="sm">6</Button>
-            <Button variant="outline" size="sm">7</Button>
-            <Button variant="outline" size="sm">8</Button>
-            <Button variant="outline" size="sm">9</Button>
-            <Button variant="outline" size="sm">10</Button>
-            <Button variant="outline" size="sm">다음</Button>
-            <Button variant="outline" size="sm">마지막</Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleFirstPage}
+              disabled={currentPage === 1}
+            >
+              처음
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handlePrevPage}
+              disabled={currentPage === 1}
+            >
+              이전
+            </Button>
+            
+            {getPageNumbers().map((pageNum) => (
+              <Button
+                key={pageNum}
+                variant={pageNum === currentPage ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(pageNum)}
+              >
+                {pageNum}
+              </Button>
+            ))}
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+            >
+              다음
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleLastPage}
+              disabled={currentPage === totalPages}
+            >
+              마지막
+            </Button>
           </div>
         </div>
 

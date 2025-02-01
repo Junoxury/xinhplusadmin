@@ -35,36 +35,33 @@ import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { HospitalService } from '@/services/hospitals'
+import { HospitalSearch } from '@/components/common/hospital-search'
+import { TreatmentService } from '@/services/treatments'
 
 const formSchema = z.object({
-  hospital_name: z.string().min(2, '병원명은 2자 이상이어야 합니다'),
+  hospital_id: z.number({
+    required_error: '병원을 선택해주세요',
+    invalid_type_error: '병원을 선택해주세요',
+  }),
+  city_id: z.number({
+    required_error: '도시 정보가 필요합니다',
+    invalid_type_error: '도시 정보가 올바르지 않습니다',
+  }),
+  hospital_name: z.string().optional(),
+  procedure_name: z.string().min(2, '시술명을 입력해주세요'),
   thumbnail_url: z.string().min(1, '썸네일 이미지를 업로드해주세요'),
   description: z.string().min(10, '간단 설명을 10자 이상 입력해주세요'),
+  detail_content: z.string().min(1, '상세 설명을 입력해주세요'),
+  is_advertised: z.boolean().default(false),
+  is_recommended: z.boolean().default(false),
+  is_discounted: z.boolean().default(false),
+  discount_rate: z.string().optional(),
+  discounted_price: z.string().optional(),
+  original_price: z.string().optional(),
   categories: z.array(z.object({
     depth2: z.string(),
     depth3: z.array(z.string())
   })).min(1, '최소 1개의 카테고리를 선택해주세요'),
-  address: z.string().min(5, '주소를 입력해주세요'),
-  latitude: z.string()
-    .refine(val => !isNaN(parseFloat(val)), '숫자를 입력해주세요')
-    .refine(val => parseFloat(val) >= -90 && parseFloat(val) <= 90, '위도는 -90에서 90 사이여야 합니다'),
-  longitude: z.string()
-    .refine(val => !isNaN(parseFloat(val)), '숫자를 입력해주세요')
-    .refine(val => parseFloat(val) >= -180 && parseFloat(val) <= 180, '경도는 -180에서 180 사이여야 합니다'),
-  business_hours: z.string(),
-  website: z.string().url().optional(),
-  facebook_url: z.string().url().optional(),
-  zalo_id: z.string().optional(),
-  phone: z.string().min(5, '전화번호를 입력해주세요'),
-  email: z.string().email('올바른 이메일 형식이 아닙니다'),
-  detail_content: z.string().min(1, '상세 설명을 입력해주세요'),
-  is_advertised: z.boolean().default(false),
-  is_recommended: z.boolean().default(false),
-  is_member: z.boolean().default(false),
-  is_google: z.boolean().default(false),
-  google_map_url: z.string().url().optional(),
-  region: z.string().min(1, '지역을 선택해주세요'),
-  city_id: z.number().optional(),
 })
 
 // 카테고리 데이터 예시
@@ -91,6 +88,19 @@ const regions = [
   "후에"
 ]
 
+// 가격 계산 함수들 추가
+const calculateDiscountRate = (original: number, discounted: number): number => {
+  return Math.round(((original - discounted) / original) * 100)
+}
+
+const calculateDiscountedPrice = (original: number, rate: number): number => {
+  return Math.round(original * (1 - rate / 100))
+}
+
+const calculateOriginalPrice = (discounted: number, rate: number): number => {
+  return Math.round(discounted / (1 - rate / 100))
+}
+
 export default function HospitalForm() {
   const router = useRouter()
   const form = useForm<z.infer<typeof formSchema>>({
@@ -98,12 +108,18 @@ export default function HospitalForm() {
     defaultValues: {
       is_advertised: false,
       is_recommended: false,
-      is_member: false,
-      is_google: false,
+      is_discounted: true,
       categories: [],
-      region: '',
-      latitude: '',
-      longitude: '',
+      hospital_id: undefined,
+      city_id: undefined,
+      hospital_name: '',
+      procedure_name: '',
+      thumbnail_url: '',
+      description: '',
+      detail_content: '',
+      discount_rate: '',
+      discounted_price: '',
+      original_price: '',
     },
   })
 
@@ -149,6 +165,67 @@ export default function HospitalForm() {
   // 상태 추가
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // 가격 동기화 처리를 위한 함수 수정
+  const handlePriceChange = (type: 'original' | 'discounted', value: string) => {
+    const isDiscounted = form.getValues('is_discounted')
+    
+    if (!isDiscounted) {
+      // 할인이 비활성화된 경우 두 가격을 동일하게 설정
+      form.setValue('original_price', value)
+      form.setValue('discounted_price', value)
+      form.setValue('discount_rate', null)
+      return
+    }
+
+    // 할인이 활성화된 경우
+    const originalPrice = type === 'original' ? parseFloat(value) : parseFloat(form.getValues('original_price'))
+    const discountedPrice = type === 'discounted' ? parseFloat(value) : parseFloat(form.getValues('discounted_price'))
+    const discountRate = parseFloat(form.getValues('discount_rate') || '0')
+
+    if (type === 'original' && value && discountRate) {
+      // 원래가격과 할인율로 최종가격 계산
+      const calculated = calculateDiscountedPrice(originalPrice, discountRate)
+      form.setValue('discounted_price', calculated.toString())
+    } else if (type === 'original' && value && discountedPrice) {
+      // 원래가격과 최종가격으로 할인율 계산
+      const calculated = calculateDiscountRate(originalPrice, discountedPrice)
+      form.setValue('discount_rate', calculated.toString())
+    } else if (type === 'discounted' && value && originalPrice) {
+      // 최종가격과 원래가격으로 할인율 계산
+      const calculated = calculateDiscountRate(originalPrice, discountedPrice)
+      form.setValue('discount_rate', calculated.toString())
+    }
+
+    form.setValue(type === 'original' ? 'original_price' : 'discounted_price', value)
+  }
+
+  // 할인율 변경 처리 함수 추가
+  const handleDiscountRateChange = (value: string) => {
+    if (!value) {
+      form.setValue('discount_rate', null)
+      return
+    }
+
+    const rate = parseFloat(value)
+    if (rate >= 0 && rate <= 100) {
+      form.setValue('discount_rate', value)
+      
+      const originalPrice = parseFloat(form.getValues('original_price'))
+      if (originalPrice) {
+        // 원래가격과 할인율로 최종가격 계산
+        const calculated = calculateDiscountedPrice(originalPrice, rate)
+        form.setValue('discounted_price', calculated.toString())
+      } else {
+        const discountedPrice = parseFloat(form.getValues('discounted_price'))
+        if (discountedPrice) {
+          // 최종가격과 할인율로 원래가격 계산
+          const calculated = calculateOriginalPrice(discountedPrice, rate)
+          form.setValue('original_price', calculated.toString())
+        }
+      }
+    }
+  }
+
   // depth2 선택 처리
   const handleDepth2Select = (value: string) => {
     setCurrentDepth2(value)
@@ -180,7 +257,6 @@ export default function HospitalForm() {
   // 지역 선택 처리
   const handleRegionSelect = (cityId: number, cityName: string) => {
     setSelectedRegion(cityName)
-    form.setValue('region', cityName)
     form.setValue('city_id', cityId)
   }
 
@@ -189,7 +265,7 @@ export default function HospitalForm() {
     const region = regions.find(r => value.includes(r))
     if (region) {
       setSelectedRegion(region)
-      form.setValue('region', region)
+      form.setValue('city_id', cities.find(c => c.name === region)?.id)
     }
   }
 
@@ -240,18 +316,28 @@ export default function HospitalForm() {
     }
   }
 
-  // onSubmit 함수 수정
+  // 폼 제출 함수 추가
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (isSubmitting) return
+    console.log('Form submitted with values:', values)
+
+    if (isSubmitting) {
+      console.log('Already submitting, returning...')
+      return
+    }
 
     try {
       setIsSubmitting(true)
+      console.log('Starting submission process...')
 
-      // 카테고리 데이터 변환 수정
+      if (!values.hospital_id) {
+        toast.error('병원을 선택해주세요')
+        return
+      }
+
+      // 카테고리 데이터 변환
       const categories = selectedCategories.flatMap(cat => {
         const depth2Category = depth2Categories.find(d2 => d2.name === cat.depth2)
         return cat.depth3.map(d3Name => {
-          // 전체 depth3 카테고리에서 찾기
           const depth3Category = allDepth3Categories.find(d3 => 
             d3.name === d3Name && 
             d3.parent_id === depth2Category?.id
@@ -260,48 +346,55 @@ export default function HospitalForm() {
             depth2_category_id: depth2Category?.id,
             depth3_category_id: depth3Category?.id
           }
-        })
+        }).filter(cat => cat.depth2_category_id && cat.depth3_category_id)
       })
 
-      // 병원 데이터 준비
-      const hospitalData = {
-        hospital_name: values.hospital_name,
+      if (categories.length === 0) {
+        toast.error('최소 1개의 카테고리를 선택해주세요')
+        return
+      }
+
+      console.log('Processed categories:', categories)
+
+      // 시술 데이터 준비
+      const treatmentData = {
+        hospital_id: values.hospital_id,
         city_id: values.city_id,
-        business_hours: values.business_hours,
-        address: values.address,
-        phone: values.phone,
-        email: values.email,
-        website: values.website || null,
-        facebook_url: values.facebook_url || null,
-        youtube_url: null,
-        tiktok_url: null,
-        instagram_url: null,
-        zalo_id: values.zalo_id || null,
-        description: values.description,
+        name: values.procedure_name,
         thumbnail_url: values.thumbnail_url,
+        description: values.description,
         detail_content: values.detail_content,
-        latitude: parseFloat(values.latitude),
-        longitude: parseFloat(values.longitude),
         is_advertised: values.is_advertised,
         is_recommended: values.is_recommended,
-        is_member: values.is_member,
-        is_google: values.is_google,
-        google_map_url: values.google_map_url || null
+        is_discounted: values.is_discounted,
+        discount_rate: values.is_discounted ? parseInt(values.discount_rate || '0') : null,
+        discounted_price: parseInt(values.discounted_price || '0'),
+        original_price: parseInt(values.original_price || '0'),
+      }
+
+      console.log('Treatment data prepared:', treatmentData)
+
+      // city_id 값 확인을 위한 추가 검증
+      if (!values.city_id) {
+        toast.error('도시 정보가 없습니다')
+        return
       }
 
       // RPC 호출하여 저장
-      const result = await HospitalService.create(hospitalData, categories)
+      const result = await TreatmentService.create(treatmentData, categories)
+      console.log('RPC result:', result)
 
       if (result.success) {
-        toast.success('병원이 성공적으로 등록되었습니다')
-        router.push('/hospitals')  // 목록 페이지로 이동
+        toast.success('시술이 성공적으로 등록되었습니다')
+        await router.push('/procedures')
+        return
       } else {
-        toast.error('병원 등록에 실패했습니다: ' + result.error)
+        toast.error(`시술 등록에 실패했습니다: ${result.error}`)
       }
 
     } catch (error) {
       console.error('Error submitting form:', error)
-      toast.error('병원 정보 저장에 실패했습니다')
+      toast.error(error instanceof Error ? error.message : '시술 정보 저장에 실패했습니다')
     } finally {
       setIsSubmitting(false)
     }
@@ -311,27 +404,63 @@ export default function HospitalForm() {
     <div className="container mx-auto py-10">
       <Card>
         <CardHeader>
-          <CardTitle>병원 정보 등록</CardTitle>
+          <CardTitle>시술 정보 등록</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {/* 병원명 */}
+            <form 
+              onSubmit={(e) => {
+                console.log('Form submit event triggered') // 폼 제출 이벤트 로깅
+                form.handleSubmit(onSubmit)(e)
+              }} 
+              className="space-y-8"
+            >
+              {/* 병원 검색 */}
               <FormField
                 control={form.control}
                 name="hospital_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>병원명 *</FormLabel>
+                    <FormLabel>병원 검색 *</FormLabel>
                     <FormControl>
-                      <Input placeholder="병원명을 입력하세요" {...field} />
+                      <HospitalSearch
+                        value={field.value}
+                        onSelect={(hospital) => {
+                          console.log('Selected hospital:', hospital)  // 로그 추가
+                          field.onChange(hospital.name)
+                          form.setValue('hospital_id', hospital.id, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          })
+                          form.setValue('city_id', hospital.city_id, {  // city_id 설정
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          })
+                          console.log('Form values after hospital select:', form.getValues())  // 로그 추가
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* 썸네일 이미지 업로드 필드 - 병원명 바로 아래 */}
+              {/* 시술명 */}
+              <FormField
+                control={form.control}
+                name="procedure_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>시술명 *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="시술명을 입력하세요" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* 썸네일 이미지 업로드 필드 */}
               <FormField
                 control={form.control}
                 name="thumbnail_url"
@@ -353,8 +482,44 @@ export default function HospitalForm() {
                 )}
               />
 
-              {/* 옵션 설정 - 썸네일 이미지 아래로 이동 */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* 간단 설명 - 썸네일 이미지 아래로 이동 */}
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>간단 설명 *</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="시술에 대한 간단한 설명을 입력하세요" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* 옵션 설정 - 할인 카드를 맨 앞으로 이동 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="is_discounted"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">할인</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="is_advertised"
@@ -390,61 +555,82 @@ export default function HospitalForm() {
                     </FormItem>
                   )}
                 />
+              </div>
 
+              {/* 가격 정보 - 할인율을 맨 오른쪽으로 이동 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
-                  name="is_member"
+                  name="discounted_price"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">멤버</FormLabel>
-                      </div>
+                    <FormItem>
+                      <FormLabel>할인가격(최종가격)</FormLabel>
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                        <Input 
+                          type="number" 
+                          placeholder="예: 1000000" 
+                          {...field}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (!value || parseFloat(value) >= 0) {
+                              handlePriceChange('discounted', value)
+                            }
+                          }}
                         />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
 
                 <FormField
                   control={form.control}
-                  name="is_google"
+                  name="original_price"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">구글</FormLabel>
-                      </div>
+                    <FormItem>
+                      <FormLabel>원래 가격</FormLabel>
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                        <Input 
+                          type="number" 
+                          placeholder="예: 2000000" 
+                          {...field}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (!value || parseFloat(value) >= 0) {
+                              handlePriceChange('original', value)
+                            }
+                          }}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="discount_rate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>할인율 (%)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="예: 20" 
+                          {...field}
+                          disabled={!form.getValues('is_discounted')}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            handleDiscountRateChange(value)
+                          }}
+                        />
+                      </FormControl>
+                      <FormDescription>0-100 사이의 숫자를 입력하세요</FormDescription>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-
-              {/* 간단 설명 */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>간단 설명 *</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="병원에 대한 간단한 설명을 입력하세요" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               {/* 카테고리 */}
               <FormField
@@ -524,208 +710,6 @@ export default function HospitalForm() {
                   </FormItem>
                 )}
               />
-
-              {/* 주소 및 위치 정보 */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-1">
-                    <FormField
-                      control={form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>주소 *</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="주소를 입력하세요" 
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e)
-                                handleAddressChange(e.target.value)
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div>
-                    <FormLabel>지역 *</FormLabel>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {cities.map((city) => (
-                        <Button
-                          key={city.id}
-                          type="button"
-                          variant={selectedRegion === city.name ? "default" : "outline"}
-                          className="w-full"
-                          onClick={() => handleRegionSelect(city.id, city.name)}
-                        >
-                          {city.name}
-                        </Button>
-                      ))}
-                    </div>
-                    {form.formState.errors.region && (
-                      <p className="text-sm font-medium text-destructive mt-2">
-                        {form.formState.errors.region.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="latitude"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>위도 *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.00000001"  // 8자리 소수점 허용
-                            placeholder="예: 37.5665" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="longitude"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>경도 *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.00000001"  // 8자리 소수점 허용
-                            placeholder="예: 126.9780" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="google_map_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>구글 Map URL</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="구글 지도 공유 URL을 입력하세요" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        구글 지도에서 위치를 검색하고 공유 URL을 붙여넣으세요
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* 진료시간 - autosize 적용 */}
-              <FormField
-                control={form.control}
-                name="business_hours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>진료시간</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="진료시간을 입력하세요" 
-                        {...field}
-                        className="min-h-[80px] resize-y"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* 연락처 정보 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>웹사이트</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="facebook_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>페이스북</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="zalo_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>잘로 ID</FormLabel>
-                      <FormControl>
-                        <Input placeholder="잘로 ID를 입력하세요" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>전화번호 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="전화번호를 입력하세요" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>이메일 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="이메일을 입력하세요" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
 
               {/* 상세 설명 에디터 */}
               <FormField

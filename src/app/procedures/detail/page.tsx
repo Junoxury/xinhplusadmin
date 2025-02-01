@@ -201,7 +201,22 @@ export default function ProcedureDetailPage({
           <div className="space-y-2">
             <h3 className="font-semibold">상세 설명</h3>
             <div 
-              className="prose prose-sm max-w-none bg-muted/30 rounded-lg p-4 prose-headings:text-foreground prose-p:text-muted-foreground"
+              className="prose prose-sm max-w-none bg-muted/30 rounded-lg p-4 
+                prose-headings:text-foreground 
+                prose-p:text-muted-foreground 
+                max-h-[600px] 
+                overflow-y-auto
+                [&::-webkit-scrollbar]:w-4
+                [&::-webkit-scrollbar-track]:bg-slate-200
+                [&::-webkit-scrollbar-thumb]:bg-slate-400
+                [&::-webkit-scrollbar-thumb]:rounded-md
+                [&::-webkit-scrollbar-thumb]:border
+                [&::-webkit-scrollbar-thumb]:border-slate-200
+                hover:[&::-webkit-scrollbar-thumb]:bg-slate-500
+                [&_img]:!rounded-lg
+                [&_img]:!max-h-none
+                [&_img]:!w-full
+                [&_img]:!object-fill"
               dangerouslySetInnerHTML={{ __html: treatment.detail_content }} 
             />
           </div>

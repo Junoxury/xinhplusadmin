@@ -90,3 +90,9 @@ body {
 .tippy-arrow {
   display: none !important;
 }
+
+.prose img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
