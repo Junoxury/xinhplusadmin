@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,17 +12,18 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from '@/types/supabase'
+import { supabase } from '@/lib/supabase'
 
 type Admin = {
   id: string
   email: string
-  user_metadata: {
-    name: string
-    role: 'ADMIN' | 'SUPER_ADMIN'
-  }
+  name: string | null
+  role: string | null
+  phone: string | null
   last_sign_in_at: string
   created_at: string
 }
@@ -32,21 +33,21 @@ export function AdminList() {
   const [nameSearch, setNameSearch] = useState('')
   const [emailSearch, setEmailSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClientComponentClient<Database>()
 
-  const fetchAdmins = async () => {
+  const fetchAdmins = useCallback(async () => {
     setIsLoading(true)
     try {
-      const { data: { users }, error } = await supabase.auth.admin.listUsers()
+      const { data, error } = await supabase.rpc('get_admins')
+      console.log('RPC Response:', { data, error })
       
       if (error) throw error
 
-      // 검색 필터링을 클라이언트 사이드에서 수행
-      let filteredUsers = users
+      let filteredUsers = data || []
+      console.log('Filtered Users:', filteredUsers)
 
       if (nameSearch) {
         filteredUsers = filteredUsers.filter(user => 
-          user.user_metadata?.name?.toLowerCase().includes(nameSearch.toLowerCase())
+          user.name?.toLowerCase().includes(nameSearch.toLowerCase())
         )
       }
 
@@ -56,18 +57,18 @@ export function AdminList() {
         )
       }
       
+      console.log('Final Admins Data:', filteredUsers)
       setAdmins(filteredUsers as Admin[])
     } catch (error) {
-      console.error('Error fetching admins:', error)
+      console.error('Error in fetchAdmins:', error)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [nameSearch, emailSearch])
 
-  // 검색어가 변경될 때마다 데이터 다시 불러오기
   useEffect(() => {
     fetchAdmins()
-  }, [nameSearch, emailSearch])
+  }, [fetchAdmins])
 
   return (
     <div className="space-y-4">
@@ -123,10 +124,16 @@ export function AdminList() {
                 <TableRow key={admin.id}>
                   <TableCell className="text-center">{index + 1}</TableCell>
                   <TableCell>{admin.id}</TableCell>
-                  <TableCell>{admin.user_metadata?.name || '-'}</TableCell>
+                  <TableCell>{admin.name || '-'}</TableCell>
                   <TableCell>{admin.email}</TableCell>
                   <TableCell>
-                    {admin.user_metadata?.role === 'SUPER_ADMIN' ? '최고관리자' : '관리자'}
+                    {admin.role === 'admin' ? (
+                      <Badge variant="default">관리자</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
+                        승인대기
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>{admin.last_sign_in_at ? formatDate(admin.last_sign_in_at) : '-'}</TableCell>
                   <TableCell>{formatDate(admin.created_at)}</TableCell>
