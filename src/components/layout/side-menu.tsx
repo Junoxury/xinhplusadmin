@@ -13,9 +13,10 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import {
@@ -23,6 +24,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { toast } from "sonner"
 
 const menuItems = [
   {
@@ -106,6 +109,8 @@ const menuItems = [
 
 export function SideMenu() {
   const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClientComponentClient()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const renderMenuItem = (menu: typeof menuItems[0]) => {
@@ -229,6 +234,17 @@ export function SideMenu() {
     )
   }
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      toast.success('로그아웃되었습니다')
+      router.push('/login')
+      router.refresh()
+    } catch (error) {
+      toast.error('로그아웃 중 오류가 발생했습니다')
+    }
+  }
+
   return (
     <div className={cn(
       "relative border-r bg-card",
@@ -255,6 +271,20 @@ export function SideMenu() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="mt-auto px-3 py-2">
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+              isCollapsed && "justify-center"
+            )}
+            onClick={handleLogout}
+          >
+            <LogOut className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
+            {!isCollapsed && "로그아웃"}
+          </Button>
         </div>
       </div>
 

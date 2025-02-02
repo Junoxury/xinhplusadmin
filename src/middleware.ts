@@ -22,10 +22,21 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-
   // 이미 로그인된 상태에서 로그인 페이지에 접근하려는 경우
   if (session && isPublicPath) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
+  // 관리자 권한 체크 (비공개 경로에 대해서만)
+  if (!isPublicPath && session) {
+    const userRole = session.user?.user_metadata?.profile?.role
+    const isAdmin = userRole && ['admin', 'super_admin'].includes(userRole)
+
+    if (!isAdmin) {
+      const url = new URL('/login', req.url)
+      url.searchParams.set('message', '관리자 권한이 필요합니다')
+      return NextResponse.redirect(url)
+    }
   }
 
   return res
