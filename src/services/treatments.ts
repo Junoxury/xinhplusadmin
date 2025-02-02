@@ -57,7 +57,23 @@ export interface TreatmentListParams {
   offset?: number
 }
 
-export async function getTreatments(params: TreatmentListParams): Promise<TreatmentListResponse> {
+export interface GetTreatmentsParams {
+  hospital_id?: number
+  depth2_category_id?: number
+  depth3_category_id?: number
+  is_advertised?: boolean
+  is_recommended?: boolean
+  city_id?: number
+  is_discounted?: boolean
+  price_from?: number
+  price_to?: number
+  sort_by?: 'view_count' | 'like_count' | 'rating' | 'discount_price_asc' | 'discount_price_desc'
+  limit?: number
+  offset?: number
+  searchTerm?: string
+}
+
+export async function getTreatments(params: GetTreatmentsParams): Promise<TreatmentListResponse> {
   console.log('[getTreatments] Input params:', params);
 
   const rpcResponse = await supabase.rpc('get_treatments', {
@@ -72,7 +88,8 @@ export async function getTreatments(params: TreatmentListParams): Promise<Treatm
     p_price_to: params.price_to,
     p_sort_by: params.sort_by || 'view_count',
     p_limit: params.limit || 10,
-    p_offset: params.offset || 0
+    p_offset: params.offset || 0,
+    p_search_term: params.searchTerm
   })
 
   console.log('[getTreatments] RPC raw response:', rpcResponse);
@@ -229,5 +246,41 @@ export const TreatmentService = {
         error: error instanceof Error ? error.message : '시술 등록 중 오류가 발생했습니다'
       }
     }
+  },
+
+  async getTreatments({
+    hospital_id,
+    depth2_category_id,
+    depth3_category_id,
+    is_advertised,
+    is_recommended,
+    city_id,
+    is_discounted,
+    price_from,
+    price_to,
+    sort_by,
+    limit,
+    offset,
+    searchTerm
+  }: GetTreatmentsParams = {}) {
+    const { data, error } = await supabase
+      .rpc('get_treatments', {
+        p_hospital_id: hospital_id,
+        p_depth2_category_id: depth2_category_id,
+        p_depth3_category_id: depth3_category_id,
+        p_is_advertised: is_advertised,
+        p_is_recommended: is_recommended,
+        p_city_id: city_id,
+        p_is_discounted: is_discounted,
+        p_price_from: price_from,
+        p_price_to: price_to,
+        p_sort_by: sort_by || 'view_count',
+        p_limit: limit || 10,
+        p_offset: offset || 0,
+        p_search_term: searchTerm
+      })
+
+    if (error) throw error
+    return data
   }
 } 

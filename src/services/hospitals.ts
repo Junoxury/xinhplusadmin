@@ -15,6 +15,7 @@ export interface GetHospitalsParams {
   is_member?: boolean
   is_google?: boolean
   hasDiscount?: boolean
+  searchTerm?: string
 }
 
 export const HospitalService = {
@@ -82,7 +83,8 @@ export const HospitalService = {
     hasDiscount,
     page = 1,
     pageSize = 10,
-    sortBy = 'latest'
+    sortBy = 'latest',
+    searchTerm
   }: GetHospitalsParams = {}) {
     const { data, error } = await supabase
       .rpc('get_hospitals_list', {
@@ -96,7 +98,8 @@ export const HospitalService = {
         p_has_discount: hasDiscount,
         p_page: page,
         p_page_size: pageSize,
-        p_sort_by: sortBy
+        p_sort_by: sortBy,
+        p_search_term: searchTerm
       })
 
     if (error) throw error

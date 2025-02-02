@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { getTreatments, type Treatment } from '@/services/treatments'
 import { useRouter } from 'next/navigation'
+import { useDebounce } from '@/hooks/use-debounce'
 
 export function ProcedureList() {
   const router = useRouter()
@@ -55,9 +56,9 @@ export function ProcedureList() {
     depth3Category: null as string | null,
     city: null as string | null,
     status: [] as string[],
-    // 초기 가격 범위를 priceRange와 동일하게 설정
     priceFrom: '0',
-    priceTo: MAX_PRICE.toString()
+    priceTo: MAX_PRICE.toString(),
+    searchTerm: undefined as string | undefined
   })
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -113,13 +114,14 @@ export function ProcedureList() {
       is_discounted: filters.status.includes('discount') ? true : undefined,
       price_from: filters.priceFrom ? Number(filters.priceFrom) : undefined,
       price_to: filters.priceTo ? Number(filters.priceTo) : undefined,
-      sort_by: sortBy,  // 정렬 조건 추가
+      sort_by: sortBy,
       limit: Number(pageSize),
-      offset: (currentPage - 1) * Number(pageSize)
+      offset: (currentPage - 1) * Number(pageSize),
+      searchTerm: filters.searchTerm   // 검색어 파라미터 추가
     };
 
     return getTreatments(params);
-  }, [filters, pageSize, currentPage, sortBy]);  // sortBy 의존성 추가
+  }, [filters, pageSize, currentPage, sortBy]);
 
   // 시술 목록 조회
   const { data: treatmentData, isLoading } = useQuery({
@@ -195,13 +197,29 @@ export function ProcedureList() {
     )
   }
 
+  const [searchTerm, setSearchTerm] = useState("")
+  const debouncedSearchTerm = useDebounce(searchTerm, 500)
+
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      searchTerm: debouncedSearchTerm || undefined,
+      page: 1
+    }))
+  }, [debouncedSearchTerm])
+
   return (
     <div className="space-y-4">
       {/* 필터 섹션 */}
       <Card className="p-4">
         <div className="space-y-4">
           <div className="flex gap-4">
-            <Input placeholder="시술명 검색" className="w-1/4" />
+            <Input 
+              placeholder="시술명 검색" 
+              className="w-1/4" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
             <div className="flex gap-2 w-3/4">
               <Select 
                 value={filters.depth2Category || '전체'}

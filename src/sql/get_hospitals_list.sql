@@ -17,7 +17,8 @@ CREATE OR REPLACE FUNCTION get_hospitals_list(
     p_page_size int DEFAULT 10,
     p_page int DEFAULT 1,
     p_ad_limit int DEFAULT 2,
-    p_sort_by text DEFAULT 'created'
+    p_sort_by text DEFAULT 'created',
+    p_search_term text DEFAULT NULL    -- 검색어 파라미터 추가
 ) 
 RETURNS TABLE (
     id bigint,
@@ -55,6 +56,7 @@ BEGIN
     INTO v_total_count
     FROM hospitals h
     WHERE (p_city_id IS NULL OR h.city_id = p_city_id)
+        AND (p_search_term IS NULL OR h.name ILIKE '%' || p_search_term || '%')  -- 검색 조건 추가
         AND (p_depth2_body_category_id IS NULL OR EXISTS (
             SELECT 1 FROM hospital_categories 
             WHERE hospital_id = h.id 
@@ -131,6 +133,7 @@ BEGIN
         LEFT JOIN cities c ON h.city_id = c.id
         LEFT JOIN hospital_categories_grouped hcg ON h.id = hcg.h_id
         WHERE (p_city_id IS NULL OR h.city_id = p_city_id)
+            AND (p_search_term IS NULL OR h.name ILIKE '%' || p_search_term || '%')  -- 검색 조건 추가
             AND (p_depth2_body_category_id IS NULL OR EXISTS (
                 SELECT 1 FROM hospital_categories 
                 WHERE hospital_id = h.id 

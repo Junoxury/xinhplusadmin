@@ -35,6 +35,7 @@ import { useRouter } from "next/navigation"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import Link from 'next/link'
+import { useDebounce } from '@/hooks/use-debounce'
 
 export function HospitalList() {
   const [hospitals, setHospitals] = useState<Hospital[]>([])
@@ -58,6 +59,8 @@ export function HospitalList() {
   const [depth2Categories, setDepth2Categories] = useState<Category[]>([])
   const [depth3Categories, setDepth3Categories] = useState<Category[]>([])
   const router = useRouter()
+  const [searchTerm, setSearchTerm] = useState("")
+  const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
   const loadHospitals = useCallback(async () => {
     try {
@@ -115,6 +118,14 @@ export function HospitalList() {
       page: 1
     }))
   }, [filters.status])
+
+  useEffect(() => {
+    setParams(prev => ({
+      ...prev,
+      searchTerm: debouncedSearchTerm || undefined,
+      page: 1
+    }))
+  }, [debouncedSearchTerm])
 
   const loadCities = async () => {
     try {
@@ -176,7 +187,12 @@ export function HospitalList() {
       <Card className="p-4">
         <div className="space-y-4">
           <div className="flex gap-4">
-            <Input placeholder="병원명 검색" className="w-1/4" />
+            <Input 
+              placeholder="병원명 검색" 
+              className="w-1/4" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
             <div className="flex gap-2 w-3/4">
               <Select 
                 value={filters.status}
