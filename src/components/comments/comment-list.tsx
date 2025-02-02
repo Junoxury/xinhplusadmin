@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { MoreHorizontal, Eye, AlertTriangle, EyeOff, Trash } from 'lucide-react'
+import { MoreHorizontal, Eye, AlertTriangle, EyeOff, Trash, CornerDownRight } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,7 @@ import { formatDate } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useDebounce } from '@/hooks/use-debounce'
+import { ColumnDef } from '@tanstack/react-table'
 
 // 댓글 상태에 따른 뱃지 색상 정의
 const statusColorMap = {
@@ -49,6 +50,21 @@ interface Comment {
   status: 'normal' | 'reported' | 'hidden'
   like_count: number
   created_at: string
+  is_reply: boolean
+}
+
+const CommentContent = ({ comment }: { comment: Comment }) => {
+  return (
+    <div className="flex items-center gap-2">
+      {comment.is_reply && (
+        <span className="flex items-center text-muted-foreground text-sm">
+          <CornerDownRight className="h-4 w-4 mr-1" />
+          답글
+        </span>
+      )}
+      <span>{comment.content}</span>
+    </div>
+  )
 }
 
 export function CommentList() {
@@ -137,7 +153,7 @@ export function CommentList() {
         <TableCell>{comment.hospital_name}</TableCell>
         <TableCell>{comment.author_nickname || comment.author_email}</TableCell>
         <TableCell className="max-w-[300px] truncate">
-          {comment.content}
+          <CommentContent comment={comment} />
         </TableCell>
         <TableCell>
           <Badge className={statusColorMap[comment.status]}>

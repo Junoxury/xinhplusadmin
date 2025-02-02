@@ -66,40 +66,51 @@ export function ReviewList() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['reviews', currentPage, pageSize, searchText, searchEmail, approvalStatus, status, googleReview, sortBy],
     queryFn: async () => {
-      console.log('Fetching reviews with params:', {
+      // RPC 호출 전 파라미터 로깅
+      const params = {
         p_limit: pageSize,
         p_offset: (currentPage - 1) * pageSize,
         p_sort_by: sortBy,
-        p_is_verified: approvalStatus === 'null' ? null : approvalStatus === 'true',
-        p_status: status === 'null' ? null : status,
+        p_is_verified: approvalStatus === 'null' || approvalStatus === '' ? null : approvalStatus === 'true',
+        p_status: status === 'null' || status === '' ? null : status,
         p_is_google: googleReview === 'all' ? null : googleReview === 'google'
-      })
+      }
+      console.log('🚀 RPC 호출 파라미터:', params)
 
       const { data, error } = await supabase
-        .rpc('get_reviews', {
-          p_limit: pageSize,
-          p_offset: (currentPage - 1) * pageSize,
-          p_sort_by: sortBy,
-          p_is_verified: approvalStatus === 'null' ? null : approvalStatus === 'true',
-          p_status: status === 'null' ? null : status,
-          p_is_google: googleReview === 'all' ? null : googleReview === 'google'
-        })
+        .rpc('get_reviews', params)
 
-      console.log('RPC Response:', { data, error })
-
+      // RPC 호출 결과 로깅
       if (error) {
-        console.error('RPC Error:', error)
+        console.error('❌ RPC 에러:', error)
         throw error
       }
 
+      console.log('✅ RPC 응답 데이터:', {
+        총_데이터_수: data?.length || 0,
+        첫번째_항목: data?.[0],
+        마지막_항목: data?.[data?.length - 1]
+      })
+
       if (!data) {
-        console.warn('No data returned from RPC')
+        console.warn('⚠️ RPC 응답 데이터 없음')
         return []
       }
 
       return data as Review[]
     }
   })
+
+  // 쿼리 상태 로깅
+  useEffect(() => {
+    console.log('🔄 쿼리 상태:', { 
+      isLoading,
+      에러: error,
+      데이터_수: data?.length,
+      현재_페이지: currentPage,
+      페이지_크기: pageSize
+    })
+  }, [data, isLoading, error, currentPage, pageSize])
 
   console.log('Query Result:', { data, isLoading, error })
 

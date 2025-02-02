@@ -23,6 +23,29 @@ import { useRouter } from "next/navigation"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { dashboardService } from '@/services/dashboard'
 
+interface StatsData {
+  userCount: {
+    total: number
+    period: number
+    increase: number
+  }
+  hospitalCount: {
+    total: number
+    period: number
+    increase: number
+  }
+  treatmentCount: {
+    total: number
+    period: number
+    increase: number
+  }
+  reviewCount: {
+    total: number
+    period: number
+    increase: number
+  }
+}
+
 // 차트 컴포넌트
 function ChartCard({ title, dataKey, color, detailLink, data }: { 
   title: string; 
@@ -81,7 +104,10 @@ interface StatCardProps {
   title: string
   total: number
   period: number
-  increase: number
+  increase: {
+    percentage: number
+    count: number
+  }
   icon: React.ReactNode
   detailLink: string
 }
@@ -110,27 +136,27 @@ function StatCard({ title, total, period, increase, icon, detailLink }: StatCard
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-baseline gap-2">
-                <h3 className="text-2xl font-semibold">
-                  {total.toLocaleString()}
-                </h3>
-                <span className="text-sm text-muted-foreground">
-                  ({period.toLocaleString()})
-                </span>
-              </div>
-              <p className={cn(
-                "text-sm",
-                increase > 0 ? "text-green-500" : "text-red-500"
-              )}>
-                {increase > 0 ? "+" : ""}{increase}%
-              </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-2xl font-semibold">
+                {total.toLocaleString()}
+              </h3>
+              <span className="text-sm text-muted-foreground">
+                ({period.toLocaleString()})
+              </span>
             </div>
-            <div className="rounded-full bg-primary/10 p-3 text-primary">
-              {icon}
-            </div>
+            <p className={cn(
+              "text-sm flex items-center gap-1",
+              increase.percentage > 0 ? "text-green-500" : "text-red-500"
+            )}>
+              <span>{increase.percentage > 0 ? "+" : ""}{increase.percentage}%</span>
+              <span>{increase.percentage > 0 ? "↑" : "↓"} {Math.abs(increase.count)}</span>
+              <span className="text-muted-foreground">(전주대비)</span>
+            </p>
+          </div>
+          <div className="rounded-full bg-primary/10 p-3 text-primary">
+            {icon}
           </div>
         </div>
       </div>
@@ -146,7 +172,12 @@ export default function DashboardPage() {
     to: endOfDayFns(today) // 오늘까지
   })
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month' | 'custom'>('week') // 초기값을 'week'로 설정
-  const [stats, setStats] = useState({ userCount: { total: 0, period: 0 }, hospitalCount: { total: 0, period: 0 }, treatmentCount: { total: 0, period: 0 }, reviewCount: { total: 0, period: 0 } })
+  const [stats, setStats] = useState<StatsData>({
+    userCount: { total: 0, period: 0, increase: 0 },
+    hospitalCount: { total: 0, period: 0, increase: 0 },
+    treatmentCount: { total: 0, period: 0, increase: 0 },
+    reviewCount: { total: 0, period: 0, increase: 0 }
+  })
   const [chartData, setChartData] = useState<any[]>([])
 
   // 통계 데이터 로드
@@ -246,7 +277,7 @@ export default function DashboardPage() {
           title="총 가입자"
           total={stats.userCount.total}
           period={stats.userCount.period}
-          increase={12.5}
+          increase={stats.userCount.increase}
           icon={<Users className="h-6 w-6" />}
           detailLink="/members"
         />
@@ -254,7 +285,7 @@ export default function DashboardPage() {
           title="병원/클리닉"
           total={stats.hospitalCount.total}
           period={stats.hospitalCount.period}
-          increase={5.2}
+          increase={stats.hospitalCount.increase}
           icon={<Building2 className="h-6 w-6" />}
           detailLink="/hospitals"
         />
@@ -262,7 +293,7 @@ export default function DashboardPage() {
           title="성형/시술"
           total={stats.treatmentCount.total}
           period={stats.treatmentCount.period}
-          increase={8.7}
+          increase={stats.treatmentCount.increase}
           icon={<Stethoscope className="h-6 w-6" />}
           detailLink="/procedures"
         />
@@ -270,7 +301,7 @@ export default function DashboardPage() {
           title="후기"
           total={stats.reviewCount.total}
           period={stats.reviewCount.period}
-          increase={15.3}
+          increase={stats.reviewCount.increase}
           icon={<MessageSquare className="h-6 w-6" />}
           detailLink="/reviews"
         />

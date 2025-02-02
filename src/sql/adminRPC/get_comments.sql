@@ -7,16 +7,18 @@ CREATE OR REPLACE FUNCTION get_comments(
     p_page_size INTEGER DEFAULT 10       -- 페이지당 항목 수
 )
 RETURNS TABLE (
-    id BIGINT,                          -- 댓글 ID
-    content TEXT,                       -- 댓글 내용
-    treatment_name VARCHAR(200),        -- 시술명
-    hospital_name VARCHAR(200),         -- 병원명
-    author_email VARCHAR(255),          -- 작성자 이메일
-    author_nickname VARCHAR(255),       -- 작성자 닉네임
-    status VARCHAR(20),                 -- 상태
-    like_count INTEGER,                 -- 좋아요 수
-    created_at TIMESTAMPTZ,            -- 작성일
-    total_count BIGINT                 -- 전체 결과 수
+    id BIGINT,                          
+    content TEXT,                       
+    treatment_name VARCHAR(200),        
+    hospital_name VARCHAR(200),         
+    author_email VARCHAR(255),          
+    author_nickname VARCHAR(255),       
+    status VARCHAR(20),                 
+    like_count INTEGER,                 
+    created_at TIMESTAMPTZ,            
+    parent_id BIGINT,                  -- 부모 댓글 ID
+    is_reply BOOLEAN,                  -- 답글 여부
+    total_count BIGINT                
 ) 
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -33,7 +35,11 @@ BEGIN
             up.nickname as author_nickname,
             rc.status,
             rc.like_count,
-            rc.created_at
+            rc.created_at,
+            rc.parent_id,                                    -- 부모 댓글 ID
+            CASE WHEN rc.parent_id IS NOT NULL THEN TRUE     -- 답글 여부
+                 ELSE FALSE 
+            END as is_reply
         FROM review_comments rc
         LEFT JOIN reviews r ON rc.review_id = r.id
         LEFT JOIN treatments t ON r.treatment_id = t.id
