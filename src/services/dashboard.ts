@@ -4,18 +4,34 @@ export interface DashboardStats {
   userCount: {
     total: number
     period: number
+    increase: {
+      percentage: number
+      count: number
+    }
   }
   hospitalCount: {
     total: number
     period: number
+    increase: {
+      percentage: number
+      count: number
+    }
   }
   treatmentCount: {
     total: number
     period: number
+    increase: {
+      percentage: number
+      count: number
+    }
   }
   reviewCount: {
     total: number
     period: number
+    increase: {
+      percentage: number
+      count: number
+    }
   }
 }
 

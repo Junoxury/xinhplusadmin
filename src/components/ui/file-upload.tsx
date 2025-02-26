@@ -8,14 +8,14 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 
 interface FileUploadProps extends React.HTMLAttributes<HTMLDivElement> {
-  onChange: (file: File | null) => void
+  onFileChange: (file: File | null) => void
   onClear?: () => void
   value?: string
   accept?: string
 }
 
 export function FileUpload({
-  onChange,
+  onFileChange,
   onClear,
   value,
   accept = 'image/jpeg, image/png, image/gif, image/webp, image/svg+xml',
@@ -42,7 +42,7 @@ export function FileUpload({
         return
       }
       if (acceptedFiles.length > 0) {
-        onChange(acceptedFiles[0])
+        onFileChange(acceptedFiles[0])
       }
     }
   })
@@ -50,7 +50,7 @@ export function FileUpload({
   // 이미지 삭제 핸들러
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()  // 상위 클릭 이벤트 전파 방지
-    onChange(null)  // 값을 null로 설정
+    onFileChange(null)  // 값을 null로 설정
     onClear?.()     // 추가 클리어 작업 실행
   }
 

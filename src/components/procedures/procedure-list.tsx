@@ -86,11 +86,11 @@ export function ProcedureList() {
         if (aParent && bParent) {
           // 먼저 depth1의 sort_order로 정렬
           if (aParent.sort_order !== bParent.sort_order) {
-            return aParent.sort_order - bParent.sort_order;
+            return (aParent.sort_order ?? 0) - (bParent.sort_order ?? 0);
           }
         }
         // 같은 depth1 내에서는 자신의 sort_order로 정렬
-        return a.sort_order - b.sort_order;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
       });
     }
   });
@@ -221,94 +221,99 @@ export function ProcedureList() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="flex gap-2 w-3/4">
-              <Select 
-                value={filters.depth2Category || '전체'}
-                onValueChange={(value) => 
-                  setFilters(prev => ({ 
-                    ...prev, 
-                    depth2Category: value === '전체' ? null : value,
-                    depth3Category: null // 상위 카테고리 변경 시 하위 카테고리 초기화
-                  }))
-                }
-                className="w-1/4"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="시술 분류" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="전체">전체</SelectItem>
-                  {depth2Categories?.map((category) => (
-                    <SelectItem 
-                      key={category.id} 
-                      value={category.id.toString()}
-                    >
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select 
-                value={filters.depth3Category || '전체'}
-                onValueChange={(value) => 
-                  setFilters(prev => ({ 
-                    ...prev, 
-                    depth3Category: value === '전체' ? null : value 
-                  }))
-                }
-                className="w-1/4"
-                disabled={!filters.depth2Category}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="세부 분류" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="전체">전체</SelectItem>
-                  {depth3Categories?.map((category) => (
-                    <SelectItem 
-                      key={category.id} 
-                      value={category.id.toString()}
-                    >
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedRegion}
-                onValueChange={handleRegionChange}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="지역 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="전체">전체</SelectItem>
-                  {regions?.map((region) => (
-                    <SelectItem key={region.id} value={region.id.toString()}>
-                      {region.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select 
-                value={filters.status.join(',') || '전체'}
-                onValueChange={(value) => 
-                  setFilters(prev => ({ 
-                    ...prev, 
-                    status: value === '전체' ? [] : value.split(',')
-                  }))
-                }
-                className="w-1/4"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="상태" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="전체">전체</SelectItem>
-                  <SelectItem value="ad">광고</SelectItem>
-                  <SelectItem value="recommended">추천</SelectItem>
-                  <SelectItem value="discount">할인</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="w-1/4">
+                <Select 
+                  value={filters.depth2Category || '전체'}
+                  onValueChange={(value) => 
+                    setFilters(prev => ({ 
+                      ...prev, 
+                      depth2Category: value === '전체' ? null : value,
+                      depth3Category: null
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="시술 분류" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="전체">전체</SelectItem>
+                    {depth2Categories?.map((category) => (
+                      <SelectItem 
+                        key={category.id} 
+                        value={category.id.toString()}
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/4">
+                <Select 
+                  value={filters.depth3Category || '전체'}
+                  onValueChange={(value) => 
+                    setFilters(prev => ({ 
+                      ...prev, 
+                      depth3Category: value === '전체' ? null : value 
+                    }))
+                  }
+                  disabled={!filters.depth2Category}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="세부 분류" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="전체">전체</SelectItem>
+                    {depth3Categories?.map((category) => (
+                      <SelectItem 
+                        key={category.id} 
+                        value={category.id.toString()}
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/4">
+                <Select
+                  value={selectedRegion}
+                  onValueChange={handleRegionChange}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="지역 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="전체">전체</SelectItem>
+                    {regions?.map((region) => (
+                      <SelectItem key={region.id} value={region.id.toString()}>
+                        {region.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/4">
+                <Select 
+                  value={filters.status.join(',') || '전체'}
+                  onValueChange={(value) => 
+                    setFilters(prev => ({ 
+                      ...prev, 
+                      status: value === '전체' ? [] : value.split(',')
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="상태" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="전체">전체</SelectItem>
+                    <SelectItem value="ad">광고</SelectItem>
+                    <SelectItem value="recommended">추천</SelectItem>
+                    <SelectItem value="discount">할인</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 

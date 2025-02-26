@@ -136,7 +136,7 @@ export function DateRangePicker({
               onSelect={handleSelect}
               numberOfMonths={2}
               locale={ko}
-              disabled={{ before: selectionStep === 'end' ? tempDate?.from : undefined }}
+              disabled={selectionStep === 'end' && tempDate?.from ? { before: tempDate.from } : undefined}
             />
             <div className="flex justify-end gap-2">
               <Button

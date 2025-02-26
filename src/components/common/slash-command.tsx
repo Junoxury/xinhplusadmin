@@ -145,14 +145,16 @@ const renderContainer = () => {
         button.className = 'flex items-center gap-2 w-full p-2 text-sm text-left hover:bg-accent hover:text-accent-foreground rounded'
 
         const iconHtml = (() => {
-          if (item.icon.type === Heading1) return '<path d="M4 12h16M4 6h16M4 18h16"/>'
-          if (item.icon.type === Heading2) return '<path d="M4 12h8M4 6h16M4 18h16"/>'
-          if (item.icon.type === List) return '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'
-          if (item.icon.type === ListOrdered) return '<path d="M10 6h11M10 12h11M10 18h11M4 6h1v4M4 10h2M4 18h1v-4M4 14h2"/>'
-          if (item.icon.type === CheckSquare) return '<path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'
-          if (item.icon.type === Code) return '<path d="m10 20-6-6 6-6M14 4l6 6-6 6"/>'
-          if (item.icon.type === Quote) return '<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>'
-          if (item.icon.type === TableIcon) return '<path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/>'
+          if (item.icon && typeof item.icon === 'object' && 'type' in item.icon) {
+            if (item.icon.type === Heading1) return '<path d="M4 12h16M4 6h16M4 18h16"/>'
+            if (item.icon.type === Heading2) return '<path d="M4 12h8M4 6h16M4 18h16"/>'
+            if (item.icon.type === List) return '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'
+            if (item.icon.type === ListOrdered) return '<path d="M10 6h11M10 12h11M10 18h11M4 6h1v4M4 10h2M4 18h1v-4M4 14h2"/>'
+            if (item.icon.type === CheckSquare) return '<path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'
+            if (item.icon.type === Code) return '<path d="m10 20-6-6 6-6M14 4l6 6-6 6"/>'
+            if (item.icon.type === Quote) return '<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>'
+            if (item.icon.type === TableIcon) return '<path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/>'
+          }
           return ''
         })()
 
@@ -205,7 +207,7 @@ const Command = Extension.create({
         },
         items: getSuggestionItems,
         render: renderContainer,
-        allow: ({ state, range }) => {
+        allow: ({ state, range }: { state: any; range: any }) => {
           const $from = state.doc.resolve(range.from)
           return $from.parent.type.name === 'paragraph'
         },

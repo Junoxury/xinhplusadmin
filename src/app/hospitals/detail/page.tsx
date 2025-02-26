@@ -17,12 +17,23 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
-import type { HospitalDetail } from "./types"
+import type { HospitalDetail } from "@/types/hospital"
 import { HospitalService } from "@/services/hospitals"
 import { notFound } from "next/navigation"
 
 interface Props {
   searchParams: { id?: string }
+}
+
+interface CategoryType {
+  depth2: {
+    id: string;
+    name: string;
+  };
+  depth3: {
+    id: string;
+    name: string;
+  };
 }
 
 // 영업시간 포맷팅 함수 추가
@@ -33,17 +44,20 @@ function formatBusinessHours(hours: string) {
 }
 
 // 카테고리 그룹화 함수 수정
-function groupCategories(categories: HospitalDetail['categories']) {
+function groupCategories(categories: CategoryType[] | null | undefined) {
   const grouped = new Map()
   
-  categories?.forEach(cat => {
+  if (!categories || !Array.isArray(categories)) {
+    return []
+  }
+
+  categories.forEach(cat => {
     if (!grouped.has(cat.depth2.id)) {
       grouped.set(cat.depth2.id, {
         depth2: cat.depth2,
         depth3: []
       })
     }
-    // depth3 카테고리를 바로 추가
     grouped.get(cat.depth2.id).depth3.push(cat.depth3)
   })
 
@@ -126,21 +140,24 @@ export default async function HospitalDetailPage({ searchParams }: Props) {
               {/* 두 번째 줄: 카테고리 */}
               <div className="space-y-2">
                 {/* depth2 카테고리 반복 */}
-                {Array.from(new Set(hospitalData.categories?.map(cat => cat.depth2.id))).map(depth2Id => {
+                {(hospitalData.categories as { depth2: { id: string } }[])?.map(cat => cat.depth2.id).map(depth2Id => {
                   // 현재 depth2에 해당하는 카테고리 찾기
-                  const currentCategory = hospitalData.categories?.find(cat => cat.depth2.id === depth2Id)
+                  const currentCategory = (hospitalData.categories as Array<{
+                    depth2: { id: string; name: string };
+                    depth3: { name: string }[];
+                  }>)?.find(cat => cat.depth2.id === depth2Id)
                   
                   return (
                     <div key={depth2Id} className="flex items-center gap-2">
                       <Badge variant="secondary" className="shrink-0">
-                        {currentCategory?.depth2.label}
+                        {currentCategory?.depth2.name}
                       </Badge>
                       <span className="text-muted-foreground">:</span>
                       <div className="flex flex-wrap gap-1">
                         {/* depth3 배열 순회 */}
                         {currentCategory?.depth3.map((depth3: any, idx: number) => (
                           <Badge key={`${depth2Id}-${idx}`} variant="outline" className="text-xs">
-                            {depth3.label}
+                            {depth3.name}
                           </Badge>
                         ))}
                       </div>

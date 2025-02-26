@@ -173,13 +173,13 @@ export default function HospitalForm() {
       // 할인이 비활성화된 경우 두 가격을 동일하게 설정
       form.setValue('original_price', value)
       form.setValue('discounted_price', value)
-      form.setValue('discount_rate', null)
+      form.setValue('discount_rate', '')
       return
     }
 
     // 할인이 활성화된 경우
-    const originalPrice = type === 'original' ? parseFloat(value) : parseFloat(form.getValues('original_price'))
-    const discountedPrice = type === 'discounted' ? parseFloat(value) : parseFloat(form.getValues('discounted_price'))
+    const originalPrice = type === 'original' ? parseFloat(value) : parseFloat(form.getValues('original_price') || '0')
+    const discountedPrice = type === 'discounted' ? parseFloat(value) : parseFloat(form.getValues('discounted_price') || '0')
     const discountRate = parseFloat(form.getValues('discount_rate') || '0')
 
     if (type === 'original' && value && discountRate) {
@@ -202,7 +202,7 @@ export default function HospitalForm() {
   // 할인율 변경 처리 함수 추가
   const handleDiscountRateChange = (value: string) => {
     if (!value) {
-      form.setValue('discount_rate', null)
+      form.setValue('discount_rate', '')
       return
     }
 
@@ -210,13 +210,13 @@ export default function HospitalForm() {
     if (rate >= 0 && rate <= 100) {
       form.setValue('discount_rate', value)
       
-      const originalPrice = parseFloat(form.getValues('original_price'))
+      const originalPrice = parseFloat(form.getValues('original_price') || '0')
       if (originalPrice) {
         // 원래가격과 할인율로 최종가격 계산
         const calculated = calculateDiscountedPrice(originalPrice, rate)
         form.setValue('discounted_price', calculated.toString())
       } else {
-        const discountedPrice = parseFloat(form.getValues('discounted_price'))
+        const discountedPrice = parseFloat(form.getValues('discounted_price') || '0')
         if (discountedPrice) {
           // 최종가격과 할인율로 원래가격 계산
           const calculated = calculateOriginalPrice(discountedPrice, rate)
@@ -265,7 +265,10 @@ export default function HospitalForm() {
     const region = regions.find(r => value.includes(r))
     if (region) {
       setSelectedRegion(region)
-      form.setValue('city_id', cities.find(c => c.name === region)?.id)
+      const city = cities.find(c => c.name === region)
+      if (city) {
+        form.setValue('city_id', city.id)
+      }
     }
   }
 
@@ -342,11 +345,15 @@ export default function HospitalForm() {
             d3.name === d3Name && 
             d3.parent_id === depth2Category?.id
           )
-          return {
-            depth2_category_id: depth2Category?.id,
-            depth3_category_id: depth3Category?.id
+          // depth2_category_id와 depth3_category_id가 모두 정의된 경우에만 반환
+          if (depth2Category?.id !== undefined && depth3Category?.id !== undefined) {
+            return {
+              depth2_category_id: depth2Category.id,
+              depth3_category_id: depth3Category.id
+            }
           }
-        }).filter(cat => cat.depth2_category_id && cat.depth3_category_id)
+          return null; // undefined인 경우 null 반환
+        }).filter(cat => cat !== null) // null 필터링
       })
 
       if (categories.length === 0) {
@@ -432,7 +439,7 @@ export default function HospitalForm() {
                             shouldValidate: true,
                             shouldDirty: true,
                           })
-                          form.setValue('city_id', hospital.city_id, {  // city_id 설정
+                          form.setValue('city_id', hospital.city_id || 0, {
                             shouldValidate: true,
                             shouldDirty: true,
                           })
@@ -470,7 +477,7 @@ export default function HospitalForm() {
                     <FormControl>
                       <FileUpload
                         value={field.value}
-                        onChange={handleThumbnailUpload}
+                        onFileChange={(file) => handleThumbnailUpload(file)}
                         accept="image/*"
                       />
                     </FormControl>

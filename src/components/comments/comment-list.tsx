@@ -31,7 +31,6 @@ import { formatDate } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useDebounce } from '@/hooks/use-debounce'
-import { ColumnDef } from '@tanstack/react-table'
 
 // 댓글 상태에 따른 뱃지 색상 정의
 const statusColorMap = {
@@ -92,9 +91,9 @@ export function CommentList() {
 
       const { data, error } = await supabase
         .rpc('get_comments', {
-          p_content: debouncedContent || null,
-          p_author: debouncedAuthor || null,
-          p_status: selectedStatus === 'all' ? null : selectedStatus,
+          p_content: debouncedContent || undefined,
+          p_author: debouncedAuthor || undefined,
+          p_status: selectedStatus === 'all' ? undefined : selectedStatus,
           p_page: currentPage,
           p_page_size: Number(pageSize)
         })
@@ -106,9 +105,6 @@ export function CommentList() {
 
       console.log('RPC 응답 데이터:', data)
       return data as (Comment & { total_count: number })[]
-    },
-    onError: (error) => {
-      console.error('Query 에러:', error)
     }
   })
 

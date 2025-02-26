@@ -26,8 +26,17 @@ import {
 } from "@/components/ui/popover"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { toast } from "sonner"
+import React from 'react'
 
-const menuItems = [
+interface MenuItem {
+  title: string;
+  href: string;
+  icon: React.ElementType;
+  disabled?: boolean;
+  subItems?: MenuItem[];
+}
+
+const menuItems: MenuItem[] = [
   {
     title: '대시보드',
     href: '/dashboard',
@@ -67,10 +76,12 @@ const menuItems = [
       {
         title: '배너관리',
         href: '/marketing/banners',
+        icon: LayoutDashboard,
       },
       {
         title: '기획전관리',
         href: '/marketing/promotions',
+        icon: LayoutDashboard,
       }
     ]
   },
@@ -93,29 +104,36 @@ const menuItems = [
       {
         title: '카테고리 관리',
         href: '/settings/categories',
+        icon: LayoutDashboard,
       },
       {
         title: '지역 관리',
         href: '/settings/regions',
+        icon: LayoutDashboard,
       },
       {
         title: 'API 관리',
         href: '/settings/apis',
-        disabled: true
+        disabled: true,
+        icon: LayoutDashboard,
       }
     ]
   },
 ]
 
-export function SideMenu() {
+interface SideMenuProps {
+  isCollapsed: boolean;
+}
+
+export const SideMenu: React.FC<SideMenuProps> = ({ isCollapsed }) => {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClientComponentClient()
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [collapsed, setIsCollapsed] = useState(isCollapsed)
 
-  const renderMenuItem = (menu: typeof menuItems[0]) => {
+  const renderMenuItem = (menu: MenuItem) => {
     // 하위 메뉴가 있고 접혀있는 경우
-    if (menu.subItems && isCollapsed) {
+    if (menu.subItems && collapsed) {
       return (
         <Popover>
           <PopoverTrigger asChild>
@@ -152,7 +170,7 @@ export function SideMenu() {
     }
 
     // 하위 메뉴가 있고 펼쳐진 경우
-    if (menu.subItems && !isCollapsed) {
+    if (menu.subItems && !collapsed) {
       return (
         <>
           <div
@@ -203,11 +221,11 @@ export function SideMenu() {
         <div
           className={cn(
             "flex items-center rounded-lg px-3 py-2 text-sm font-medium opacity-50 cursor-not-allowed",
-            isCollapsed && "justify-center"
+            collapsed && "justify-center"
           )}
         >
-          <menu.icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-          {!isCollapsed && (
+          <menu.icon className={cn("h-4 w-4", !collapsed && "mr-2")} />
+          {!collapsed && (
             <>
               <span className="flex-1">{menu.title}</span>
               <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
@@ -225,11 +243,11 @@ export function SideMenu() {
         className={cn(
           "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
           pathname === menu.href ? "bg-accent" : "transparent",
-          isCollapsed && "justify-center"
+          collapsed && "justify-center"
         )}
       >
-        <menu.icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-        {!isCollapsed && menu.title}
+        <menu.icon className={cn("h-4 w-4", !collapsed && "mr-2")} />
+        {!collapsed && menu.title}
       </Link>
     )
   }
@@ -248,18 +266,18 @@ export function SideMenu() {
   return (
     <div className={cn(
       "relative border-r bg-card",
-      isCollapsed ? "w-16" : "w-64",
+      collapsed ? "w-16" : "w-64",
       "transition-all duration-300"
     )}>
       <div className="flex flex-col py-4 h-full">
         <div className="px-3 py-2">
           <div className={cn(
             "mb-6 px-4 flex items-center",
-            isCollapsed && "justify-center"
+            collapsed && "justify-center"
           )}>
             <span className={cn(
               "text-2xl font-bold text-primary transition-all duration-300",
-              isCollapsed && "text-lg"
+              collapsed && "text-lg"
             )}>
               Xinh+
             </span>
@@ -278,12 +296,12 @@ export function SideMenu() {
             variant="ghost"
             className={cn(
               "w-full flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-              isCollapsed && "justify-center"
+              collapsed && "justify-center"
             )}
             onClick={handleLogout}
           >
-            <LogOut className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-            {!isCollapsed && "로그아웃"}
+            <LogOut className={cn("h-4 w-4", !collapsed && "mr-2")} />
+            {!collapsed && "로그아웃"}
           </Button>
         </div>
       </div>
@@ -293,9 +311,9 @@ export function SideMenu() {
         variant="ghost"
         size="icon"
         className="absolute -right-4 top-6 h-8 w-8 rounded-full border bg-background"
-        onClick={() => setIsCollapsed(!isCollapsed)}
+        onClick={() => setIsCollapsed(!collapsed)}
       >
-        {isCollapsed ? (
+        {collapsed ? (
           <ChevronRight className="h-4 w-4" />
         ) : (
           <ChevronLeft className="h-4 w-4" />

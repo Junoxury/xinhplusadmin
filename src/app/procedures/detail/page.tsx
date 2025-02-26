@@ -141,7 +141,7 @@ export default function ProcedureDetailPage({
           <div className="aspect-[16/9] max-h-[320px] w-full overflow-hidden rounded-lg bg-muted">
             <img 
               src={treatment.thumbnail_url} 
-              alt={treatment.title}
+              alt={treatment.name}
               className="w-full h-full object-cover"
             />
           </div>
@@ -153,7 +153,7 @@ export default function ProcedureDetailPage({
           <div className="space-y-4">
             <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-2xl font-bold">{treatment.title}</h2>
+                <h2 className="text-2xl font-bold">{treatment.name}</h2>
                 <p className="text-muted-foreground">{treatment.hospital_name}</p>
                 <div className="flex items-center gap-6 text-sm text-muted-foreground mt-2">
                   <div className="flex items-center gap-1">
@@ -195,7 +195,7 @@ export default function ProcedureDetailPage({
 
           <div className="space-y-2">
             <h3 className="font-semibold">시술 요약</h3>
-            <p>{treatment.summary}</p>
+            <p>{treatment.description}</p>
           </div>
 
           <div className="space-y-2">
@@ -228,11 +228,11 @@ export default function ProcedureDetailPage({
               <h3 className="font-semibold mb-2">가격 정보</h3>
               {treatment.is_discounted && (
                 <p className="text-muted-foreground line-through">
-                  {treatment.price.toLocaleString()}원
+                  {treatment.original_price.toLocaleString()}원
                 </p>
               )}
               <p className="text-2xl font-bold text-destructive">
-                {treatment.discount_price.toLocaleString()}원
+                {treatment.discounted_price.toLocaleString()}원
               </p>
               {treatment.is_discounted && (
                 <Badge variant="destructive">{treatment.discount_rate}% 할인</Badge>
@@ -244,11 +244,11 @@ export default function ProcedureDetailPage({
             <div>
               <h3 className="font-semibold mb-2">카테고리</h3>
               <div className="space-y-2">
-                {treatment.categories.map((cat) => (
+                {treatment.categories.map((cat: TreatmentDetail['categories'][0]) => (
                   <div key={cat.depth2_id} className="space-y-1">
                     <Badge variant="outline">{cat.depth2_name}</Badge>
                     <div className="flex gap-1 flex-wrap">
-                      {cat.depth3_list.map((depth3) => (
+                      {cat.depth3_list.map((depth3: TreatmentDetail['categories'][0]['depth3_list'][0]) => (
                         <Badge key={depth3.id} variant="secondary">
                           {depth3.name}
                         </Badge>

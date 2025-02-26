@@ -56,7 +56,8 @@ export function CategoryList() {
 
   const loadDepth2Categories = async (depth1Id: number) => {
     try {
-      const data = await CategoryService.getDepth2Categories(depth1Id)
+      console.log('loadDepth2Categories', depth1Id)
+      const data = await CategoryService.getDepth2Categories()
       setDepth2Categories(data)
     } catch (error) {
       console.error('Failed to load depth2 categories:', error)

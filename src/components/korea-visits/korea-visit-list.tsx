@@ -35,6 +35,7 @@ export function KoreaVisitList() {
     hasPassport: false,
     hasVisa: false,
     isCompleted: false,
+    status: 'all',
   })
 
   return (
@@ -45,37 +46,50 @@ export function KoreaVisitList() {
           <div className="flex gap-4">
             <Input placeholder="고객명 검색" className="w-1/3" />
             <div className="flex gap-2 w-2/3">
-              <Select className="w-1/3">
-                <SelectTrigger>
-                  <SelectValue placeholder="방문 목적" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="surgery">수술</SelectItem>
-                  <SelectItem value="treatment">시술</SelectItem>
-                  <SelectItem value="consultation">상담</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select className="w-1/3">
-                <SelectTrigger>
-                  <SelectValue placeholder="방문 단계" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="request">신청</SelectItem>
-                  <SelectItem value="preparation">준비중</SelectItem>
-                  <SelectItem value="confirmed">확정</SelectItem>
-                  <SelectItem value="completed">완료</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select className="w-1/3">
-                <SelectTrigger>
-                  <SelectValue placeholder="상태" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">진행중</SelectItem>
-                  <SelectItem value="completed">완료</SelectItem>
-                  <SelectItem value="cancelled">취소</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="w-1/3">
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="방문 목적" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="surgery">수술</SelectItem>
+                    <SelectItem value="treatment">시술</SelectItem>
+                    <SelectItem value="consultation">상담</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/3">
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="방문 단계" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="request">신청</SelectItem>
+                    <SelectItem value="preparation">준비중</SelectItem>
+                    <SelectItem value="confirmed">확정</SelectItem>
+                    <SelectItem value="completed">완료</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/3">
+                <Select 
+                  value={filters.status}
+                  onValueChange={(value: typeof filters.status) => 
+                    setFilters(prev => ({ ...prev, status: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="상태" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체</SelectItem>
+                    <SelectItem value="ad">광고</SelectItem>
+                    <SelectItem value="recommended">추천</SelectItem>
+                    <SelectItem value="member">멤버</SelectItem>
+                    <SelectItem value="google">구글</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 

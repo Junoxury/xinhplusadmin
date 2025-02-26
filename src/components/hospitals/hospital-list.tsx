@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { ChevronDownIcon } from '@radix-ui/react-icons'
 import {
   Select,
   SelectContent,
@@ -20,13 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Card } from '@/components/ui/card'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { Checkbox } from "@/components/ui/checkbox"
-import { HospitalService, type Hospital, type GetHospitalsParams } from '@/services/hospitals'
+import { HospitalService, type GetHospitalsParams, type HospitalWithCount } from '@/services/hospitals'
 import { Pencil, Trash2 } from 'lucide-react'
 import { RegionService, type City } from '@/services/regions'
 import Image from 'next/image'
@@ -38,7 +31,7 @@ import Link from 'next/link'
 import { useDebounce } from '@/hooks/use-debounce'
 
 export function HospitalList() {
-  const [hospitals, setHospitals] = useState<Hospital[]>([])
+  const [hospitals, setHospitals] = useState<HospitalWithCount[]>([])
   const [params, setParams] = useState<GetHospitalsParams>({
     page: 1,
     pageSize: 10,
@@ -51,7 +44,7 @@ export function HospitalList() {
   const [pageSize, setPageSize] = useState('10')
   const [selectedDepth2Id, setSelectedDepth2Id] = useState<string>("0")
   const [selectedDepth3Id, setSelectedDepth3Id] = useState<string>("0")
-  const [isOpen, setIsOpen] = useState(false)
+  
   const [filters, setFilters] = useState({
     status: 'all' as 'all' | 'ad' | 'recommended' | 'member' | 'google'
   })
@@ -194,82 +187,86 @@ export function HospitalList() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="flex gap-2 w-3/4">
-              <Select 
-                value={filters.status}
-                onValueChange={(value: typeof filters.status) => 
-                  setFilters(prev => ({ ...prev, status: value }))
-                }
-                className="w-[140px]"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="상태" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  <SelectItem value="ad">광고</SelectItem>
-                  <SelectItem value="recommended">추천</SelectItem>
-                  <SelectItem value="member">멤버</SelectItem>
-                  <SelectItem value="google">구글</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="w-[140px]">
+                <Select 
+                  value={filters.status}
+                  onValueChange={(value: typeof filters.status) => 
+                    setFilters(prev => ({ ...prev, status: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="상태" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체</SelectItem>
+                    <SelectItem value="ad">광고</SelectItem>
+                    <SelectItem value="recommended">추천</SelectItem>
+                    <SelectItem value="member">멤버</SelectItem>
+                    <SelectItem value="google">구글</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <Select 
-                className="w-[140px]"
-                value={params.cityId?.toString() || "0"}
-                onValueChange={handleCityChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="지역" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">전체</SelectItem>
-                  {cities.map(city => (
-                    <SelectItem key={city.id} value={city.id.toString()}>
-                      {city.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="w-[140px]">
+                <Select 
+                  value={params.cityId?.toString() || "0"}
+                  onValueChange={handleCityChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="지역" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">전체</SelectItem>
+                    {cities.map(city => (
+                      <SelectItem key={city.id} value={city.id.toString()}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <Select 
-                className="w-[140px]"
-                value={selectedDepth2Id}
-                onValueChange={(value) => {
-                  setSelectedDepth2Id(value)
-                  setSelectedDepth3Id("0")
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="시술 대분류" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">전체</SelectItem>
-                  {depth2Categories.map(category => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="w-[140px]">
+                <Select 
+                  value={selectedDepth2Id}
+                  onValueChange={(value) => {
+                    setSelectedDepth2Id(value)
+                    setSelectedDepth3Id("0")
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="시술 대분류" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">전체</SelectItem>
+                    {depth2Categories.map(category => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <Select 
-                className="w-[140px]"
-                value={selectedDepth3Id}
-                onValueChange={setSelectedDepth3Id}
-                disabled={!selectedDepth2Id || selectedDepth2Id === "0"}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="시술 소분류" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">전체</SelectItem>
-                  {depth3Categories.map(category => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="w-[140px]">
+                <Select 
+                  value={selectedDepth3Id}
+                  onValueChange={setSelectedDepth3Id}
+                  disabled={!selectedDepth2Id || selectedDepth2Id === "0"}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="시술 소분류" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">전체</SelectItem>
+                    {depth3Categories.map(category => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
@@ -321,7 +318,7 @@ export function HospitalList() {
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => router.push(`/hospitals/detail?id=${hospital.id}`)}
                 >
-                  <TableCell>{(params.page - 1) * params.pageSize + index + 1}</TableCell>
+                  <TableCell>{((params.page || 1) - 1) * (params.pageSize || 10) + index + 1}</TableCell>
                   <TableCell>
                     {hospital.thumbnail_url ? (
                       <div className="relative w-10 h-10">
@@ -410,18 +407,18 @@ export function HospitalList() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => handlePageChange(params.page - 1)}
+              onClick={() => handlePageChange(params.page! - 1)}
               disabled={params.page === 1}
             >
               이전
             </Button>
             <Button variant="outline" disabled>
-              {params.page} / {Math.ceil(totalCount / params.pageSize)}
+              {params.page} / {Math.ceil(totalCount / (params.pageSize || 10))}
             </Button>
             <Button
               variant="outline"
-              onClick={() => handlePageChange(params.page + 1)}
-              disabled={params.page >= Math.ceil(totalCount / params.pageSize)}
+              onClick={() => handlePageChange(params.page! + 1)}
+              disabled={params.page! >= Math.ceil(totalCount / (params.pageSize || 10))}
             >
               다음
             </Button>

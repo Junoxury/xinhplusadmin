@@ -45,37 +45,43 @@ export function PromotionList() {
           <div className="flex gap-4">
             <Input placeholder="기획전명 검색" className="w-1/3" />
             <div className="flex gap-2 w-2/3">
-              <Select className="w-1/3">
-                <SelectTrigger>
-                  <SelectValue placeholder="기획전 유형" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="season">시즌</SelectItem>
-                  <SelectItem value="event">이벤트</SelectItem>
-                  <SelectItem value="special">스페셜</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select className="w-1/3">
-                <SelectTrigger>
-                  <SelectValue placeholder="카테고리" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="face">안면</SelectItem>
-                  <SelectItem value="body">체형</SelectItem>
-                  <SelectItem value="skin">피부</SelectItem>
-                  <SelectItem value="dental">치과</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select className="w-1/3">
-                <SelectTrigger>
-                  <SelectValue placeholder="상태" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">진행중</SelectItem>
-                  <SelectItem value="scheduled">예정</SelectItem>
-                  <SelectItem value="ended">종료</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="w-1/3">
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="기획전 유형" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="season">시즌</SelectItem>
+                    <SelectItem value="event">이벤트</SelectItem>
+                    <SelectItem value="special">스페셜</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/3">
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="카테고리" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="face">안면</SelectItem>
+                    <SelectItem value="body">체형</SelectItem>
+                    <SelectItem value="skin">피부</SelectItem>
+                    <SelectItem value="dental">치과</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/3">
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="상태" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">진행중</SelectItem>
+                    <SelectItem value="scheduled">예정</SelectItem>
+                    <SelectItem value="ended">종료</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 

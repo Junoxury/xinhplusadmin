@@ -1,23 +1,32 @@
 import { supabase } from '@/lib/supabase'
-import type { Tables } from '@/types/database.types'
 
-export type City = Tables['cities']
+export interface City {
+  id: number;
+  name: string;
+  name_ko?: string;
+  name_vi?: string;
+  sort_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export const RegionService = {
-  async getAll(orderBy: 'name' | 'sort_order' = 'sort_order') {
+  getAll: async (orderBy: string): Promise<City[]> => {
     const { data, error } = await supabase
       .from('cities')
-      .select('*')
-      .order(orderBy === 'name' ? 'name' : 'sort_order')
-
+      .select('id, name, name_ko, name_vi, sort_order, is_active, created_at, updated_at')
+      .order(orderBy)
+    
     if (error) throw error
-    return data
+    return data as City[]
   },
 
   async update(id: number, city: Partial<City>) {
+    const { id: _, ...updateData } = city  // id 제외
     const { data, error } = await supabase
       .from('cities')
-      .update(city)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()

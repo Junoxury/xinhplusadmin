@@ -29,26 +29,30 @@ export function ApiList() {
       <Card className="p-4">
         <div className="flex gap-4">
           <Input placeholder="API명 검색" className="w-1/3" />
-          <Select className="w-1/3">
-            <SelectTrigger>
-              <SelectValue placeholder="API 유형" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="rest">REST API</SelectItem>
-              <SelectItem value="graphql">GraphQL</SelectItem>
-              <SelectItem value="webhook">Webhook</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select className="w-1/3">
-            <SelectTrigger>
-              <SelectValue placeholder="상태" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">활성</SelectItem>
-              <SelectItem value="inactive">비활성</SelectItem>
-              <SelectItem value="error">오류</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="w-1/3">
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="API 유형" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rest">REST API</SelectItem>
+                <SelectItem value="graphql">GraphQL</SelectItem>
+                <SelectItem value="webhook">Webhook</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-1/3">
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="상태" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">활성</SelectItem>
+                <SelectItem value="inactive">비활성</SelectItem>
+                <SelectItem value="error">오류</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </Card>
 

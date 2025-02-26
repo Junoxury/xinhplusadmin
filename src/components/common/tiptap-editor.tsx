@@ -1,6 +1,6 @@
 'use client'
 
-import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react'
+import { useEditor, EditorContent, BubbleMenu, Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
@@ -81,8 +81,8 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         suggestion: {
           items: getSuggestionItems,
           render: renderContainer,
-          allow: ({ editor, range }) => {
-            const from = range.from
+          allow: ({ editor, range }: { editor: Editor; range: { $from: any; $to: any } }) => {
+            const from = range.$from.pos
             const $from = editor.state.doc.resolve(from)
             return $from.parent.type.name === 'paragraph' && from === $from.start()
           },

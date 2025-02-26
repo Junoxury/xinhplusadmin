@@ -35,6 +35,7 @@ const registerFormSchema = z.object({
   phone: z.string()
     .min(1, '휴대폰 번호를 입력해주세요')
     .regex(/^(0|\+84)([35789])[0-9]{8}$/, '올바른 베트남 휴대폰 번호를 입력해주세요'),
+  gender: z.enum(['male', 'female']).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "비밀번호가 일치하지 않습니다",
   path: ["confirmPassword"],

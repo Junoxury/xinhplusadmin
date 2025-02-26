@@ -1,12 +1,40 @@
 import { supabase } from '@/lib/supabase'
-import type { Tables } from '@/types/database.types'
+import { HospitalDetail } from '@/types/hospital'
+import type { Tables, Database, Json } from '@/types/supabase'
 
-export type Hospital = Tables['hospitals']
+export type Hospital = Tables<'hospitals'> & {
+  city_name?: string;
+  city_name_vi?: string;
+  city_name_ko?: string;
+}
+
+export interface HospitalWithCount {
+  id: number;
+  hospital_name: string;
+  address: string;
+  description: string;
+  thumbnail_url: string;
+  business_hours: string;
+  phone: string;
+  website: string;
+  is_advertised: boolean;
+  is_recommended: boolean;
+  is_member: boolean;
+  is_google?: boolean;
+  has_discount: boolean;
+  view_count: number;
+  like_count: number;
+  average_rating: number;
+  city_name: string;
+  city_name_vi: string;
+  city_name_ko: string;
+  total_count: number;
+}
 
 export interface GetHospitalsParams {
-  page: number
-  pageSize: number
-  sortBy: 'latest' | 'views' | 'rating' | 'likes'
+  page?: number
+  pageSize?: number
+  sortBy?: 'latest' | 'views' | 'rating' | 'likes'
   cityId?: number
   depth2TreatmentCategoryId?: number
   depth3TreatmentCategoryId?: number
@@ -16,6 +44,26 @@ export interface GetHospitalsParams {
   is_google?: boolean
   hasDiscount?: boolean
   searchTerm?: string
+}
+
+interface CreateHospitalData {
+  hospital_name: string;
+  city_id: number;
+  business_hours: string;
+  address: string;
+  phone: string;
+  email: string;
+  website?: string;
+  facebook_url?: string;
+  youtube_url?: string;
+  instagram_url?: string;
+  google_map_url?: string;
+  // 필요한 다른 필드들도 추가
+}
+
+interface CreateHospitalCategory {
+  depth2_category_id: number;
+  depth3_category_id: number;
 }
 
 export const HospitalService = {
@@ -40,18 +88,28 @@ export const HospitalService = {
     return data
   },
 
-  async create(hospitalData: any, categories: any[]) {
-    const { data, error } = await supabase
-      .rpc('create_hospital', {
-        p_hospital_data: hospitalData,
-        p_categories: categories
-      })
+  async create(data: CreateHospitalData, categories: CreateHospitalCategory[]) {
+    try {
+      const { data: result, error } = await supabase
+        .rpc('create_hospital', {
+          p_hospital_data: {
+            name: data.hospital_name,
+            city_id: data.city_id,
+            address: data.address,
+            // ... 다른 필드들
+          },
+          p_categories: categories.map(cat => ({ category_id: cat.depth2_category_id }))
+        });
 
-    if (error) throw error
-    return data
+      if (error) throw error;
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Error creating hospital:', error);
+      return { success: false, error };
+    }
   },
 
-  async update(id: number, hospital: Partial<Hospital>) {
+  async update(id: number, hospital: Omit<Partial<Hospital>, 'id'>) {
     const { data, error } = await supabase
       .from('hospitals')
       .update(hospital)
@@ -72,38 +130,25 @@ export const HospitalService = {
     if (error) throw error
   },
 
-  async getHospitals({
-    cityId,
-    depth2TreatmentCategoryId,
-    depth3TreatmentCategoryId,
-    is_advertised,
-    is_recommended,
-    is_member,
-    is_google,
-    hasDiscount,
-    page = 1,
-    pageSize = 10,
-    sortBy = 'latest',
-    searchTerm
-  }: GetHospitalsParams = {}) {
+  async getHospitals(params: GetHospitalsParams = {}) {
     const { data, error } = await supabase
       .rpc('get_hospitals_list', {
-        p_city_id: cityId,
-        p_depth2_treatment_category_id: depth2TreatmentCategoryId,
-        p_depth3_treatment_category_id: depth3TreatmentCategoryId,
-        p_is_advertised: is_advertised,
-        p_is_recommended: is_recommended,
-        p_is_member: is_member,
-        p_is_google: is_google,
-        p_has_discount: hasDiscount,
-        p_page: page,
-        p_page_size: pageSize,
-        p_sort_by: sortBy,
-        p_search_term: searchTerm
+        p_city_id: params.cityId,
+        p_depth2_treatment_category_id: params.depth2TreatmentCategoryId,
+        p_depth3_treatment_category_id: params.depth3TreatmentCategoryId,
+        p_is_advertised: params.is_advertised,
+        p_is_recommended: params.is_recommended,
+        p_is_member: params.is_member,
+        p_is_google: params.is_google,
+        p_has_discount: params.hasDiscount,
+        p_page: params.page,
+        p_page_size: params.pageSize,
+        p_sort_by: params.sortBy,
+        p_search_term: params.searchTerm
       })
 
     if (error) throw error
-    return data as Hospital[]
+    return data as HospitalWithCount[]
   },
 
   // 병원 상세 정보 조회
@@ -112,7 +157,7 @@ export const HospitalService = {
       .rpc('get_hospital_detail', { p_hospital_id: id })
     
     if (error) throw error
-    return data[0]
+    return data[0] as HospitalDetail
   },
 
   // 병원 삭제 메서드 추가

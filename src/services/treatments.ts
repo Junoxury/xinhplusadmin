@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase'
-import { TreatmentDetail } from '@/types/treatment'
 
 export interface Treatment {
   id: number
@@ -110,8 +109,14 @@ export async function getTreatments(params: GetTreatmentsParams): Promise<Treatm
     };
   }
 
+  // categories 필드를 올바른 형식으로 변환
+  const transformedData = data.map(item => ({
+    ...item,
+    categories: item.categories ? JSON.parse(JSON.stringify(item.categories)) : []
+  })) as Treatment[];
+
   const result = {
-    data,
+    data: transformedData,
     total_count: data[0].total_count,
     has_next: data[0].has_next
   };
@@ -121,19 +126,8 @@ export async function getTreatments(params: GetTreatmentsParams): Promise<Treatm
   return result;
 }
 
-export async function getTreatmentDetail(id: number): Promise<TreatmentDetail> {
-  const { data, error } = await supabase
-    .rpc('get_treatment_detail', {
-      p_treatment_id: id
-    })
-
-  if (error) throw error
-  if (!data || data.length === 0) throw new Error('Treatment not found')
-  
-  return data[0]
-}
-
-interface CreateTreatmentData {
+// 생성할 때 필요한 필드만 포함하는 인터페이스
+interface CreateTreatmentInput {
   hospital_id: number
   city_id: number
   name: string
@@ -148,13 +142,77 @@ interface CreateTreatmentData {
   original_price: number
 }
 
+// 조회 결과에 사용되는 전체 필드를 포함하는 인터페이스
+interface TreatmentDetail {
+  hospital_id: number
+  hospital_name: string
+  city_id: number
+  city_name: string
+  name: string
+  thumbnail_url: string
+  description: string
+  detail_content: string
+  summary: string
+  is_advertised: boolean
+  is_recommended: boolean
+  is_discounted: boolean
+  discount_rate: number | null
+  discounted_price: number
+  original_price: number
+  view_count: number
+  like_count: number
+  comment_count: number
+  rating: number
+  website?: string
+  facebook_url?: string
+  phone?: string
+  created_at: string
+  updated_at: string
+  categories: {
+    depth2_id: number
+    depth2_name: string
+    depth3_list: Array<{
+      id: number
+      name: string
+    }>
+  }[]
+}
+
+export async function getTreatmentDetail(id: number): Promise<TreatmentDetail> {
+  const { data, error } = await supabase
+    .rpc('get_treatment_detail', {
+      p_treatment_id: id
+    })
+
+  if (error) throw error
+  if (!data || data.length === 0) throw new Error('Treatment not found')
+  
+  // RPC 응답을 TreatmentDetail 형식으로 변환
+  const treatment: TreatmentDetail = {
+    ...data[0],
+    name: data[0].title,
+    description: data[0].summary,
+    discounted_price: data[0].discount_price,
+    original_price: data[0].price,
+    categories: data[0].categories ? JSON.parse(JSON.stringify(data[0].categories)) : []
+  }
+  
+  return treatment
+}
+
 interface CategoryData {
   depth2_category_id: number
   depth3_category_id: number
 }
 
+// RPC 응답 타입 정의 추가
+interface CreateTreatmentResponse {
+  treatment_id?: number;
+  error?: string;
+}
+
 export const TreatmentService = {
-  async create(treatmentData: CreateTreatmentData, categories: CategoryData[]) {
+  async create(treatmentData: CreateTreatmentInput, categories: CategoryData[]) {
     try {
       console.log('Creating treatment with data:', treatmentData)
       console.log('Categories:', categories)
@@ -182,6 +240,7 @@ export const TreatmentService = {
       }
 
       const rpcParams = {
+        ...treatmentData,
         p_hospital_id: treatmentData.hospital_id,
         p_city_id: treatmentData.city_id,
         p_name: treatmentData.name,
@@ -191,15 +250,18 @@ export const TreatmentService = {
         p_is_advertised: treatmentData.is_advertised,
         p_is_recommended: treatmentData.is_recommended,
         p_is_discounted: treatmentData.is_discounted,
-        p_discount_rate: treatmentData.discount_rate,
+        p_discount_rate: treatmentData.discount_rate ?? 0,
         p_discounted_price: treatmentData.discounted_price,
         p_original_price: treatmentData.original_price,
-        p_categories: categories
+        p_categories: JSON.stringify(categories)
       }
 
       console.log('Sending RPC params:', rpcParams)
 
-      const { data, error } = await supabase.rpc('admin_create_treatment', rpcParams)
+      const { data, error } = await supabase.rpc('admin_create_treatment', rpcParams) as {
+        data: CreateTreatmentResponse;
+        error: any;
+      };
 
       console.log('RPC response:', { data, error })
 
@@ -219,7 +281,7 @@ export const TreatmentService = {
         }
       }
 
-      if (data.error) {
+      if ('error' in data && data.error) {
         console.error('RPC execution error:', data.error)
         return {
           success: false,
@@ -227,7 +289,7 @@ export const TreatmentService = {
         }
       }
 
-      if (!data.treatment_id) {
+      if (!('treatment_id' in data) || !data.treatment_id) {
         console.error('No treatment_id in response')
         return {
           success: false,

@@ -45,36 +45,42 @@ export function BannerList() {
           <div className="flex gap-4">
             <Input placeholder="배너명 검색" className="w-1/3" />
             <div className="flex gap-2 w-2/3">
-              <Select className="w-1/3">
-                <SelectTrigger>
-                  <SelectValue placeholder="노출 위치" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="main">메인</SelectItem>
-                  <SelectItem value="sub">서브</SelectItem>
-                  <SelectItem value="popup">팝업</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select className="w-1/3">
-                <SelectTrigger>
-                  <SelectValue placeholder="디바이스" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  <SelectItem value="pc">PC</SelectItem>
-                  <SelectItem value="mobile">모바일</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select className="w-1/3">
-                <SelectTrigger>
-                  <SelectValue placeholder="상태" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">활성</SelectItem>
-                  <SelectItem value="inactive">비활성</SelectItem>
-                  <SelectItem value="scheduled">예약</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="w-1/3">
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="노출 위치" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="main">메인</SelectItem>
+                    <SelectItem value="sub">서브</SelectItem>
+                    <SelectItem value="popup">팝업</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/3">
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="디바이스" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체</SelectItem>
+                    <SelectItem value="pc">PC</SelectItem>
+                    <SelectItem value="mobile">모바일</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/3">
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="상태" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">활성</SelectItem>
+                    <SelectItem value="inactive">비활성</SelectItem>
+                    <SelectItem value="scheduled">예약</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 

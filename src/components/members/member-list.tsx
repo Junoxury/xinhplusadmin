@@ -119,56 +119,59 @@ export function MemberList() {
               onChange={(e) => setSearchText(e.target.value)}
             />
             <div className="flex gap-2 w-2/3">
-              <Select 
-                value={filters.gender}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, gender: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="성별" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  <SelectItem value="male">남성</SelectItem>
-                  <SelectItem value="female">여성</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select 
-                value={filters.provider}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, provider: value }))}
-                className="w-1/3"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="가입 경로" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  <SelectItem value="email">이메일</SelectItem>
-                  <SelectItem value="google">구글</SelectItem>
-                  <SelectItem value="facebook">페이스북</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select 
-                value={filters.city?.toString()}
-                onValueChange={(value) => 
-                  setFilters(prev => ({ 
-                    ...prev, 
-                    city: value === 'all' ? null : Number(value) 
-                  }))
-                }
-                className="w-1/3"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="관심지역" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  {regions?.map((region) => (
-                    <SelectItem key={region.id} value={region.id.toString()}>
-                      {region.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="w-1/4">
+                <Select 
+                  value={filters.gender}
+                  onValueChange={(value) => setFilters(prev => ({ ...prev, gender: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="성별" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체</SelectItem>
+                    <SelectItem value="male">남성</SelectItem>
+                    <SelectItem value="female">여성</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="w-1/4">
+                <Select 
+                  value={filters.provider}
+                  onValueChange={(value) => setFilters(prev => ({ ...prev, provider: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="가입 경로" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체</SelectItem>
+                    <SelectItem value="email">이메일</SelectItem>
+                    <SelectItem value="google">구글</SelectItem>
+                    <SelectItem value="facebook">페이스북</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-1/4">
+                <Select 
+                  value={filters.city?.toString()}
+                  onValueChange={(value) => 
+                    setFilters(prev => ({ 
+                      ...prev, 
+                      city: value === 'all' ? null : Number(value) 
+                    }))
+                  }>
+                  <SelectTrigger>
+                    <SelectValue placeholder="관심지역" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체</SelectItem>
+                    {regions?.map((region) => (
+                      <SelectItem key={region.id} value={region.id.toString()}>
+                        {region.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>

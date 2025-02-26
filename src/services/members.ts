@@ -5,9 +5,8 @@ export interface Member {
   email: string
   nickname: string
   gender: string
-  age: number | null
   phone: string
-  avatar_url: string | null
+  avatar_url: string
   provider: string
   last_sign_in_at: string
   city_name: string
@@ -34,8 +33,8 @@ export async function getMembersList(params: MemberListParams): Promise<MemberLi
   
   const { data, error } = await supabase.rpc('get_members_list', {
     search_text: params.search_text,
-    gender_filter: params.gender_filter === 'all' ? null : params.gender_filter,
-    provider_filter: params.provider_filter === 'all' ? null : params.provider_filter,
+    gender_filter: params.gender_filter === 'all' ? undefined : params.gender_filter,
+    provider_filter: params.provider_filter === 'all' ? undefined : params.provider_filter,
     city_filter: params.city_filter,
     category_filter: params.category_filter,
     page_number: params.page_number,
@@ -54,7 +53,7 @@ export async function getMembersList(params: MemberListParams): Promise<MemberLi
   }
 
   const total_count = data[0].total_count
-  const members = data.map(item => ({
+  const members = data.map((item: Member & { total_count: number }) => ({
     ...item,
     total_count: undefined
   })) as Member[]

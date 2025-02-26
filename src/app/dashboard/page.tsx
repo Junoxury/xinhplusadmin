@@ -21,28 +21,41 @@ import { DateRange } from "react-day-picker"
 import { addDays, startOfDay as startOfDayFns, endOfDay as endOfDayFns, subDays, subMonths, format } from "date-fns"
 import { useRouter } from "next/navigation"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { dashboardService } from '@/services/dashboard'
+import { dashboardService, DashboardStats } from '@/services/dashboard'
 
+// StatsData는 DashboardStats와 동일한 구조를 가지므로 타입 재사용
 interface StatsData {
   userCount: {
     total: number
     period: number
-    increase: number
+    increase: {
+      percentage: number
+      count: number
+    }
   }
   hospitalCount: {
     total: number
     period: number
-    increase: number
+    increase: {
+      percentage: number
+      count: number
+    }
   }
   treatmentCount: {
     total: number
     period: number
-    increase: number
+    increase: {
+      percentage: number
+      count: number
+    }
   }
   reviewCount: {
     total: number
     period: number
-    increase: number
+    increase: {
+      percentage: number
+      count: number
+    }
   }
 }
 
@@ -54,6 +67,8 @@ function ChartCard({ title, dataKey, color, detailLink, data }: {
   detailLink: string;
   data: any[];
 }) {
+  const router = useRouter()
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -173,17 +188,58 @@ export default function DashboardPage() {
   })
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month' | 'custom'>('week') // 초기값을 'week'로 설정
   const [stats, setStats] = useState<StatsData>({
-    userCount: { total: 0, period: 0, increase: 0 },
-    hospitalCount: { total: 0, period: 0, increase: 0 },
-    treatmentCount: { total: 0, period: 0, increase: 0 },
-    reviewCount: { total: 0, period: 0, increase: 0 }
+    userCount: { 
+      total: 0, 
+      period: 0, 
+      increase: { percentage: 0, count: 0 }
+    },
+    hospitalCount: { 
+      total: 0, 
+      period: 0, 
+      increase: { percentage: 0, count: 0 }
+    },
+    treatmentCount: { 
+      total: 0, 
+      period: 0, 
+      increase: { percentage: 0, count: 0 }
+    },
+    reviewCount: { 
+      total: 0, 
+      period: 0, 
+      increase: { percentage: 0, count: 0 }
+    }
   })
   const [chartData, setChartData] = useState<any[]>([])
 
   // 통계 데이터 로드
   useEffect(() => {
     if (date?.from && date?.to) {
-      dashboardService.getStats(date.from, date.to).then(setStats)
+      dashboardService.getStats(date.from, date.to).then((data: DashboardStats) => {
+        // 데이터 형식 변환
+        const transformedData: StatsData = {
+          userCount: {
+            total: data.userCount.total,
+            period: data.userCount.period,
+            increase: data.userCount.increase
+          },
+          hospitalCount: {
+            total: data.hospitalCount.total,
+            period: data.hospitalCount.period,
+            increase: data.hospitalCount.increase
+          },
+          treatmentCount: {
+            total: data.treatmentCount.total,
+            period: data.treatmentCount.period,
+            increase: data.treatmentCount.increase
+          },
+          reviewCount: {
+            total: data.reviewCount.total,
+            period: data.reviewCount.period,
+            increase: data.reviewCount.increase
+          }
+        }
+        setStats(transformedData)
+      })
     }
   }, [date])
 

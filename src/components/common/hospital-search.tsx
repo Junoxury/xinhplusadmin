@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 interface Hospital {
   id: number
   name: string
-  city_id: number
+  city_id: number | null
 }
 
 interface HospitalSearchProps {

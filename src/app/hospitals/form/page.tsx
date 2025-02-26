@@ -247,20 +247,28 @@ export default function HospitalForm() {
     try {
       setIsSubmitting(true)
 
+      if (!values.city_id) {
+        toast.error('지역을 선택해주세요')
+        return
+      }
+
       // 카테고리 데이터 변환 수정
       const categories = selectedCategories.flatMap(cat => {
         const depth2Category = depth2Categories.find(d2 => d2.name === cat.depth2)
+        if (!depth2Category?.id) return []
+        
         return cat.depth3.map(d3Name => {
-          // 전체 depth3 카테고리에서 찾기
           const depth3Category = allDepth3Categories.find(d3 => 
             d3.name === d3Name && 
-            d3.parent_id === depth2Category?.id
+            d3.parent_id === depth2Category.id
           )
+          if (!depth3Category?.id) return null
+          
           return {
-            depth2_category_id: depth2Category?.id,
-            depth3_category_id: depth3Category?.id
+            depth2_category_id: depth2Category.id,
+            depth3_category_id: depth3Category.id
           }
-        })
+        }).filter((cat): cat is { depth2_category_id: number; depth3_category_id: number } => cat !== null)
       })
 
       // 병원 데이터 준비
@@ -271,12 +279,11 @@ export default function HospitalForm() {
         address: values.address,
         phone: values.phone,
         email: values.email,
-        website: values.website || null,
-        facebook_url: values.facebook_url || null,
-        youtube_url: null,
-        tiktok_url: null,
-        instagram_url: null,
-        zalo_id: values.zalo_id || null,
+        website: values.website || undefined,
+        facebook_url: values.facebook_url || undefined,
+        youtube_url: undefined,
+        instagram_url: undefined,
+        zalo_id: values.zalo_id || undefined,
         description: values.description,
         thumbnail_url: values.thumbnail_url,
         detail_content: values.detail_content,
@@ -286,17 +293,17 @@ export default function HospitalForm() {
         is_recommended: values.is_recommended,
         is_member: values.is_member,
         is_google: values.is_google,
-        google_map_url: values.google_map_url || null
+        google_map_url: values.google_map_url || undefined
       }
 
       // RPC 호출하여 저장
       const result = await HospitalService.create(hospitalData, categories)
 
-      if (result.success) {
+      if (result?.success) {
         toast.success('병원이 성공적으로 등록되었습니다')
         router.push('/hospitals')  // 목록 페이지로 이동
       } else {
-        toast.error('병원 등록에 실패했습니다: ' + result.error)
+        toast.error('병원 등록에 실패했습니다: ' + toast.error)
       }
 
     } catch (error) {
@@ -341,7 +348,7 @@ export default function HospitalForm() {
                     <FormControl>
                       <FileUpload
                         value={field.value}
-                        onChange={handleThumbnailUpload}
+                        onFileChange={(file) => handleThumbnailUpload(file)}
                         accept="image/*"
                       />
                     </FormControl>

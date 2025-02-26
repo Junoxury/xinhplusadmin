@@ -1,11 +1,31 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/types/supabase'
 
-export type Category = Tables['categories']
+export interface Category {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  depth: number;
+  sort_order?: number;
+  icon_path: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 interface GetAllParams {
   depth1Id?: number
   depth2Id?: number
+}
+
+interface TreatmentCategory {
+  id: number;
+  name: string;
+  depth2_category_id: number | null;
+  depth3_category_id: number | null;
+  treatment_id: number | null;
+  created_at: string | null;
+  parent_id: number | null;
 }
 
 export const CategoryService = {
@@ -22,26 +42,26 @@ export const CategoryService = {
   },
 
   // depth2 카테고리 목록 조회 (부위와 시술 순서로 정렬)
-  async getDepth2Categories() {
+  async getDepth2Categories(): Promise<Category[]> {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
       .eq('depth', 2)
-      //.order('sort_order', { ascending: true })
-
+      .order('sort_order')
+    
     if (error) throw error
     return data
   },
 
-  // depth3 카테고리 목록 조회 (수정)
-  async getDepth3Categories(parentId: number) {
+  // depth3 카테고리 목록 조회
+  async getDepth3Categories(parentId: number): Promise<Category[]> {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
       .eq('depth', 3)
       .eq('parent_id', parentId)
       .order('sort_order')
-
+    
     if (error) throw error
     return data
   },
@@ -130,7 +150,7 @@ export const CategoryService = {
     })
   },
 
-  async update(id: number, category: Partial<Category>) {
+  async update(id: number, category: Omit<Partial<Category>, 'id'>) {
     const { data, error } = await supabase
       .from('categories')
       .update(category)

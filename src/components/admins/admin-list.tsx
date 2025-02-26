@@ -17,16 +17,8 @@ import { formatDate } from '@/lib/utils'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from '@/types/supabase'
 import { supabase } from '@/lib/supabase'
-
-type Admin = {
-  id: string
-  email: string
-  name: string | null
-  role: string | null
-  phone: string | null
-  last_sign_in_at: string
-  created_at: string
-}
+import { fetchAdmins } from '@/services/admins'
+import type { Admin } from '@/types/admin'
 
 export function AdminList() {
   const [admins, setAdmins] = useState<Admin[]>([])
@@ -34,15 +26,13 @@ export function AdminList() {
   const [emailSearch, setEmailSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
-  const fetchAdmins = useCallback(async () => {
+  const fetchAdminsData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase.rpc('get_admins')
-      console.log('RPC Response:', { data, error })
+      const adminsData = await fetchAdmins()
+      console.log('RPC Response:', adminsData)
       
-      if (error) throw error
-
-      let filteredUsers = data || []
+      let filteredUsers = adminsData || []
       console.log('Filtered Users:', filteredUsers)
 
       if (nameSearch) {
@@ -58,7 +48,7 @@ export function AdminList() {
       }
       
       console.log('Final Admins Data:', filteredUsers)
-      setAdmins(filteredUsers as Admin[])
+      setAdmins(filteredUsers)
     } catch (error) {
       console.error('Error in fetchAdmins:', error)
     } finally {
@@ -67,8 +57,8 @@ export function AdminList() {
   }, [nameSearch, emailSearch])
 
   useEffect(() => {
-    fetchAdmins()
-  }, [fetchAdmins])
+    fetchAdminsData()
+  }, [fetchAdminsData])
 
   return (
     <div className="space-y-4">
@@ -136,7 +126,7 @@ export function AdminList() {
                     )}
                   </TableCell>
                   <TableCell>{admin.last_sign_in_at ? formatDate(admin.last_sign_in_at) : '-'}</TableCell>
-                  <TableCell>{formatDate(admin.created_at)}</TableCell>
+                  <TableCell>{admin.created_at ? formatDate(admin.created_at) : '-'}</TableCell>
                 </TableRow>
               ))
             )}
